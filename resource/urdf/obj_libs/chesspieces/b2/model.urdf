@@ -1,0 +1,20 @@
+<?xml version="0.0" ?>
+<robot name="chesspiece2.urdf">
+  <link name="chesspiece2">
+    <visual>
+      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <geometry>
+        <!-- <cylinder radius="0.15" length="0.1"/> -->
+        <mesh filename="b2.obj"/>
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin rpy="1.57 0 0" xyz="0 0 0.0"/>
+      <geometry>
+  	    <mesh filename="b2.obj"/>
+      </geometry>
+    </collision>
+  </link>
+
+</robot>

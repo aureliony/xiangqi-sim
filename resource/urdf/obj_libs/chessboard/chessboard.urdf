@@ -1,0 +1,18 @@
+<?xml version="0.0" ?>
+<robot name="chessboard.urdf">
+  <link name="chessboard">
+    <visual>
+      <origin rpy="1.57 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="chessboard.obj"/>
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin rpy="1.57 0 0" xyz="0 0 0.0"/>
+      <geometry>
+  	    <mesh filename="chessboard.obj"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
