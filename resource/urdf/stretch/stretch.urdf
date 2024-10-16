@@ -303,7 +303,7 @@
     name="joint_lift"
     type="prismatic">
     <origin
-      xyz="-0.037385 0.1666 0"
+      xyz="-0.037385 0.3666 0"
       rpy="-1.5708 1.5708 0" />
     <parent
       link="link_mast" />
