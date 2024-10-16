@@ -29,7 +29,7 @@ plane_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/
 pybullet.changeVisualShape(0,-1,textureUniqueId=plane_texture_id)
 
 ################ Robot
-mobot_urdf_file = os.path.join(root_dir,"resource/urdf/stretch/stretch.urdf")
+mobot_urdf_file = os.path.join(root_dir, "resource/urdf/stretch/stretch.urdf")
 mobot = Robot(start_pos=[0.0,0.8,0.05], urdf_file=mobot_urdf_file)
 
 for _ in range(30):
@@ -55,8 +55,8 @@ pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
 for _ in range(20):
     pybullet.stepSimulation()
 
-pybullet.changeVisualShape(mobot.robotId,0,rgbaColor=[1,0,0,1])
-pybullet.changeVisualShape(mobot.robotId,1,rgbaColor=[0,1,0,1])
+pybullet.changeVisualShape(mobot.robot_id,0,rgbaColor=[1,0,0,1])
+pybullet.changeVisualShape(mobot.robot_id,1,rgbaColor=[0,1,0,1])
 
 pybullet.setRealTimeSimulation(1)
 
@@ -440,8 +440,8 @@ pybullet.changeDynamics(r16_id, -1, mass=0.01)
 #############################
 
 
-for j in range (pybullet.getNumJoints(mobot.robotId)):
-    print(pybullet.getJointInfo(mobot.robotId,j))
+# for j in range(pybullet.getNumJoints(mobot.robotId)):
+#     print(pybullet.getJointInfo(mobot.robotId,j))
 forward=0
 turn=0
 speed=10
@@ -481,7 +481,8 @@ while (1):
     rightWheelVelocity+= (forward+turn)*speed
     leftWheelVelocity += (forward-turn)*speed
     
-    pybullet.setJointMotorControl2(mobot.robotId,0,pybullet.VELOCITY_CONTROL,targetVelocity=leftWheelVelocity,force=1000)
-    pybullet.setJointMotorControl2(mobot.robotId,1,pybullet.VELOCITY_CONTROL,targetVelocity=rightWheelVelocity,force=1000)
+    pybullet.setJointMotorControl2(mobot.robot_id,0,pybullet.VELOCITY_CONTROL,targetVelocity=leftWheelVelocity,force=1000)
+    pybullet.setJointMotorControl2(mobot.robot_id,1,pybullet.VELOCITY_CONTROL,targetVelocity=rightWheelVelocity,force=1000)
 
     mobot.get_observation()
+    mobot.make_move()
