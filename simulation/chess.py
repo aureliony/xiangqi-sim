@@ -3,7 +3,8 @@ import time
 
 import numpy as np
 import pybullet
-from stretch import Robot
+
+from simulation.stretch import Robot
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)

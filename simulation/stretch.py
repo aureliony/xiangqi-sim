@@ -1,10 +1,7 @@
-import sys
-
 import numpy as np
 import pybullet
 from PIL import Image
 
-sys.path.append('./')
 
 def initAxis(center, quater):
     rot_mat = pybullet.getMatrixFromQuaternion(quater)

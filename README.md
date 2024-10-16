@@ -14,7 +14,7 @@ In this project, you should accomplish:
 
 # Installation
 
-1. Create a new Anaconda environment: `conda create -n mm python=3.8`
+1. Create a new Anaconda environment: `conda create -n mm python=3.10`
 
 2. `conda activate mm`
 
@@ -24,7 +24,7 @@ In this project, you should accomplish:
 
 # Run
 
-`python simulation/main.py`
+`python -m simulation.chess`
 
 # References
 
