@@ -22,22 +22,20 @@ def initAxis(center, quater):
                             lineWidth=10)
 
 
-root_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),"../")
-
 ################ Plane Environment
-plane_id = pybullet.loadURDF(os.path.join(root_dir,"resource/urdf/plane.urdf"), [0, 0, 0])
-plane_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/texture1.jpg"))
+plane_id = pybullet.loadURDF("resource/urdf/plane.urdf"), [0, 0, 0]
+plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
 pybullet.changeVisualShape(0,-1,textureUniqueId=plane_texture_id)
 
 ################ Robot
-mobot_urdf_file = os.path.join(root_dir, "resource/urdf/stretch/stretch.urdf")
+mobot_urdf_file = "resource/urdf/stretch/stretch.urdf"
 mobot = Robot(start_pos=[0.0,0.8,0.05], urdf_file=mobot_urdf_file)
 
 for _ in range(30):
     pybullet.stepSimulation()
 
 
-urdf_dir = os.path.join(root_dir,"resource/urdf")
+urdf_dir = "resource/urdf"
 
 # table initialization
 
@@ -49,7 +47,7 @@ table_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"table.urdf"),\
                                    basePosition=table_position,\
                                    baseOrientation=table_orientation,\
                                    globalScaling=table_scaling)
-table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
+table_texture_id = pybullet.loadTexture("resource/texture/table.png")
 pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
 
 
@@ -443,47 +441,44 @@ pybullet.changeDynamics(r16_id, -1, mass=0.01)
 
 # for j in range(pybullet.getNumJoints(mobot.robotId)):
 #     print(pybullet.getJointInfo(mobot.robotId,j))
-forward=0
-turn=0
-speed=10
 
 for _ in range(30):
     pybullet.stepSimulation()
 
+mobot.update_observations()
 
-mobot.get_observation()
+forward = 0
+turn = 0
+speed = 10
 
-while (1):
-    time.sleep(1./240.)
-    keys = pybullet.getKeyboardEvents()
-    leftWheelVelocity=0
-    rightWheelVelocity=0
+while True:
+    time.sleep(1/240)
+    speed = 20
 
-    for k,v in keys.items():
+    for keycode, keystate in pybullet.getKeyboardEvents().items():
+        if (keycode == pybullet.B3G_RIGHT_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+            turn = 1
+        if (keycode == pybullet.B3G_RIGHT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
+            turn = 0
+        if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+            turn = -1
+        if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
+            turn = 0
 
-        if (k == pybullet.B3G_RIGHT_ARROW and (v&pybullet.KEY_WAS_TRIGGERED)):
-                turn = -0.8
-        if (k == pybullet.B3G_RIGHT_ARROW and (v&pybullet.KEY_WAS_RELEASED)):
-                turn = 0
-        if (k == pybullet.B3G_LEFT_ARROW and (v&pybullet.KEY_WAS_TRIGGERED)):
-                turn = 0.8
-        if (k == pybullet.B3G_LEFT_ARROW and (v&pybullet.KEY_WAS_RELEASED)):
-                turn = 0
+        if (keycode == pybullet.B3G_UP_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+            forward = 1
+        if (keycode == pybullet.B3G_UP_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
+            forward = 0
+        if (keycode == pybullet.B3G_DOWN_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+            forward = -1
+        if (keycode == pybullet.B3G_DOWN_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
+            forward = 0
 
-        if (k == pybullet.B3G_UP_ARROW and (v&pybullet.KEY_WAS_TRIGGERED)):
-                forward=1
-        if (k == pybullet.B3G_UP_ARROW and (v&pybullet.KEY_WAS_RELEASED)):
-                forward=0
-        if (k == pybullet.B3G_DOWN_ARROW and (v&pybullet.KEY_WAS_TRIGGERED)):
-                forward=-1
-        if (k == pybullet.B3G_DOWN_ARROW and (v&pybullet.KEY_WAS_RELEASED)):
-                forward=0
+    rightWheelVelocity = (forward + turn) * speed
+    leftWheelVelocity  = (forward - turn) * speed
 
-    rightWheelVelocity+= (forward+turn)*speed
-    leftWheelVelocity += (forward-turn)*speed
-    
     pybullet.setJointMotorControl2(mobot.robot_id,0,pybullet.VELOCITY_CONTROL,targetVelocity=leftWheelVelocity,force=1000)
     pybullet.setJointMotorControl2(mobot.robot_id,1,pybullet.VELOCITY_CONTROL,targetVelocity=rightWheelVelocity,force=1000)
 
-    mobot.get_observation()
+    mobot.update_observations()
     mobot.make_move()

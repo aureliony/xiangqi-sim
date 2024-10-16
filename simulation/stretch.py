@@ -58,7 +58,7 @@ class Robot:
         assert name in self.joint_to_int
         return self.joint_to_int[name]
 
-    def get_observation(self) -> None:
+    def update_observations(self) -> None:
         camera_link_pos, camera_link_ori = pybullet.getLinkState(self.robot_id, self.camera_idx)[:2]
         camera_link_rotmat = pybullet.getMatrixFromQuaternion(camera_link_ori)
         camera_link_rotmat = np.array(camera_link_rotmat).reshape((3, 3))
@@ -109,7 +109,6 @@ class Robot:
             controlMode=pybullet.POSITION_CONTROL,
             targetPosition=target_lift_pos
         )
-
 
     def make_move(self):
         assert self.board_image is not None
