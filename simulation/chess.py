@@ -23,9 +23,9 @@ def initAxis(center, quater):
 
 
 ################ Plane Environment
-plane_id = pybullet.loadURDF("resource/urdf/plane.urdf"), [0, 0, 0]
+plane_id = pybullet.loadURDF("resource/urdf/plane.urdf", [0, 0, 0])
 plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
-pybullet.changeVisualShape(0,-1,textureUniqueId=plane_texture_id)
+pybullet.changeVisualShape(0, -1, textureUniqueId=plane_texture_id)
 
 ################ Robot
 mobot_urdf_file = "resource/urdf/stretch/stretch.urdf"
