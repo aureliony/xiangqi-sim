@@ -72,7 +72,7 @@ pybullet.changeVisualShape(board_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 
 # CHESS PIECES #############
 # Black pieces
-b_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2])
+b_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2])
 cp_scaling = 0.23
 obj_friction_ceof = 4000.0
 
@@ -256,7 +256,7 @@ pybullet.changeDynamics(b16_id, -1, mass=0.01)
 
 # RED PIECES
 
-r_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi * 3 / 2])
+r_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi * 3 / 2])
 cp_scaling = 0.23
 obj_friction_ceof = 4000.0
 

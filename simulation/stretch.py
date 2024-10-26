@@ -59,18 +59,24 @@ class Robot:
         return self.joint_to_int[name]
 
     def update_observations(self) -> None:
-        camera_link_pos, camera_link_ori = pybullet.getLinkState(self.robot_id, self.camera_idx)[:2]
-        camera_link_rotmat = pybullet.getMatrixFromQuaternion(camera_link_ori)
-        camera_link_rotmat = np.array(camera_link_rotmat).reshape((3, 3))
-        camera_target_link_pos = np.array(camera_link_pos)
-        camera_target_link_pos = camera_target_link_pos + camera_link_rotmat[:,0]
-        camera_mesh_color = [0.0, 1.0, 0.0, 1.0] # GREEN
-        pybullet.changeVisualShape(self.robot_id, self.camera_idx, rgbaColor=camera_mesh_color)
+        # camera_link_pos, camera_link_ori = pybullet.getLinkState(self.robot_id, self.camera_idx)[:2]
+        # camera_link_rotmat = pybullet.getMatrixFromQuaternion(camera_link_ori)
+        # camera_link_rotmat = np.array(camera_link_rotmat).reshape((3, 3))
+        # camera_target_link_pos = np.array(camera_link_pos)
+        # camera_target_link_pos = camera_target_link_pos + camera_link_rotmat[:,0]
+        # camera_mesh_color = [0.0, 1.0, 0.0, 1.0] # GREEN
+        # pybullet.changeVisualShape(self.robot_id, self.camera_idx, rgbaColor=camera_mesh_color)
 
+        # camera_view_matrix = pybullet.computeViewMatrix(
+        #     cameraEyePosition=[camera_link_pos[0], camera_link_pos[1], camera_link_pos[2]],
+        #     cameraTargetPosition=[camera_target_link_pos[0], camera_target_link_pos[1], camera_target_link_pos[2]],
+        #     cameraUpVector=camera_link_rotmat[:,1]
+        # )
+        # For simplicity, let's fix the camera position to directly above the board
         camera_view_matrix = pybullet.computeViewMatrix(
-            cameraEyePosition=[camera_link_pos[0], camera_link_pos[1], camera_link_pos[2]],
-            cameraTargetPosition=[camera_target_link_pos[0], camera_target_link_pos[1], camera_target_link_pos[2]],
-            cameraUpVector=camera_link_rotmat[:,1]
+            cameraEyePosition=[0, 0.1, 1.8],
+            cameraTargetPosition=[0.0, 0.0, 0.0],
+            cameraUpVector=[0.0, 0.0, 1.0]
         )
 
         # pybullet.resetDebugVisualizerCamera(camera_distance, camera_yaw, camera_pitch, camera_target_position)
@@ -87,7 +93,7 @@ class Robot:
         width, height, rgbPixels, depthPixels, segmentationMaskBuffer = cameraImage
         self.board_image = rgbPixels
         self.board_seg_mask = segmentationMaskBuffer
-    
+
     def adjust_lift_height(self, deltaY: float) -> None:
         """
         Extend arm (prismatic joint) by deltaY units.
