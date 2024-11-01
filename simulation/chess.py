@@ -9,7 +9,7 @@ from simulation.robot import Robot
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
 
-pybullet.setGravity(0, 0, -1.81)
+pybullet.setGravity(0, 0, -9.81)
 pybullet.setRealTimeSimulation(1)
 
 
