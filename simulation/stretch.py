@@ -44,11 +44,12 @@ class Robot:
         pybullet.resetJointState(self.robot_id, self.camera_idx, -0.3)
         pybullet.resetJointState(self.robot_id, 4, 0.5)
 
-        image_aspect_ratio = 1.5
+        image_aspect_ratio = 1.0
         self.image_height = 320
         self.image_width = int(image_aspect_ratio * self.image_height)
-        self.board_image = None # shape is (height, width, 4), RGBA format
-        self.board_seg_mask = None
+        # self.board_image = None # shape is (height, width, 4), RGBA format
+        # self.board_seg_mask = None
+        self.board = None
 
     def get_joint_index(self, name: str) -> int:
         """
@@ -101,16 +102,38 @@ class Robot:
         ], dtype=np.float32) # y,x format
         transform_matrix = cv2.getPerspectiveTransform(src_board_coords[:, ::-1], dst_board_coords[:, ::-1]) # cast to x,y format
         dst_size = (self.image_width, self.image_height)
-        transformed_board = cv2.warpPerspective(segmentationMaskBuffer.astype(np.float64), transform_matrix, dst_size)
-        # transformed_image = cv2.warpPerspective(rgbPixels.astype(np.float64), transform_matrix, dst_size)
+        transformed_board = cv2.warpPerspective(
+            segmentationMaskBuffer.astype(np.float64),
+            transform_matrix,
+            dst_size,
+            flags=cv2.INTER_NEAREST # Keep all pixels integers
+        )
 
-        # plt.imshow(segmentationMaskBuffer, cmap='viridis')
-        # plt.savefig('segmentationMaskBuffer.png', bbox_inches='tight')
-        plt.imshow(transformed_board, cmap='viridis')
-        plt.savefig('transformed_board.png', bbox_inches='tight')
+        # plt.imsave('transformed_board.png', transformed_board)
+        # self.board_seg_mask = transformed_board
+        x_vals = np.linspace(width*5/320, width*314/320, num=10)
+        y_vals = np.linspace(height*7/320, height*312/320, num=11)
+        x_coords = (x_vals[:-1] + x_vals[1:]) / 2
+        y_coords = (y_vals[:-1] + y_vals[1:]) / 2
+        x_coords = x_coords.round().astype(int)
+        y_coords = y_coords.round().astype(int)
+        board = transformed_board[np.ix_(y_coords, x_coords)]
+        self.board = board.astype(int)
 
-        self.board_seg_mask = transformed_board
-        # self.board_image = transformed_image
+        # For debugging
+        # BLACK = (0,0,0)
+        # for x in x_vals:
+        #     x = round(x)
+        #     cv2.line(transformed_board, (x, 0), (x, height), BLACK, 1)
+        # for y in y_vals:
+        #     y = round(y)
+        #     cv2.line(transformed_board, (0, y), (width, y), BLACK, 1)
+        # for x in x_coords:
+        #     x = round(x)
+        #     for y in y_coords:
+        #         y = round(y)
+        #         cv2.circle(transformed_board, (x,y), radius=0, color=BLACK, thickness=-1)
+        # plt.imsave('transformed_board.png', transformed_board)
 
 
     def get_board_coordinates(self, indices: np.ndarray):
@@ -145,10 +168,9 @@ class Robot:
             targetPosition=target_lift_pos
         )
 
-    def make_move(self):
-        # assert self.board_image is not None
-        assert self.board_seg_mask is not None
-        self.adjust_lift_height(0.001)
-        # image = Image.fromarray(self.board_image, 'RGBA')
-        # image.save('board.png')
-        # exit()
+    def make_move(self, is_our_turn=True):
+        if not is_our_turn:
+            return
+
+        assert self.board is not None
+        print(self.board)
