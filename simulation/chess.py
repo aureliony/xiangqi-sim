@@ -425,12 +425,49 @@ pybullet.changeDynamics(r16_id, -1, lateralFriction=obj_friction_ceof)
 pybullet.changeDynamics(r16_id, -1, mass=PIECE_MASS)
 #############################
 
+piece_id_to_char = {
+    board_id: "  ",
+
+    b1_id:  "将",
+    b2_id:  "士",
+    b3_id:  "士",
+    b4_id:  "象",
+    b5_id:  "象",
+    b6_id:  "馬",
+    b7_id:  "馬",
+    b8_id:  "車",
+    b9_id:  "車",
+    b10_id: "砲",
+    b11_id: "砲",
+    b12_id: "卒",
+    b13_id: "卒",
+    b14_id: "卒",
+    b15_id: "卒",
+    b16_id: "卒",
+
+    r1_id:  "帥",
+    r2_id:  "仕",
+    r3_id:  "仕",
+    r4_id:  "相",
+    r5_id:  "相",
+    r6_id:  "傌",
+    r7_id:  "傌",
+    r8_id:  "俥",
+    r9_id:  "俥",
+    r10_id: "炮",
+    r11_id: "炮",
+    r12_id: "兵",
+    r13_id: "兵",
+    r14_id: "兵",
+    r15_id: "兵",
+    r16_id: "兵",
+}
 
 ################ Robot
 mobot_urdf_file = "resource/urdf/robot/robot.urdf"
 
 obj_indices = [board_id]
-mobot = Robot([0.0,0.8,0.05], obj_indices, urdf_file=mobot_urdf_file)
+mobot = Robot([0.0,0.8,0.05], obj_indices, piece_id_to_char, urdf_file=mobot_urdf_file)
 
 # for j in range(pybullet.getNumJoints(mobot.robotId)):
 #     print(pybullet.getJointInfo(mobot.robotId,j))

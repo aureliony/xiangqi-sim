@@ -16,12 +16,13 @@ def initAxis(center, quater):
 
 
 class Robot:
-    def __init__(self, start_pos, obj_indices, urdf_file=None):
+    def __init__(self, start_pos, obj_indices, piece_id_to_char, urdf_file=None):
         self.gripperMaxForce = 1000.0
         self.armMaxForce = 200.0
 
         self.obj_indices = obj_indices
         self.board_id = obj_indices[0]
+        self.piece_id_to_char = piece_id_to_char
         self.urdf_file = urdf_file
 
         self.robot_id = pybullet.loadURDF(urdf_file, start_pos)
@@ -50,6 +51,7 @@ class Robot:
         # self.board_image = None # shape is (height, width, 4), RGBA format
         # self.board_seg_mask = None
         self.board = None
+        self.i = 0
 
     def get_joint_index(self, name: str) -> int:
         """
@@ -167,10 +169,19 @@ class Robot:
             controlMode=pybullet.POSITION_CONTROL,
             targetPosition=target_lift_pos
         )
+    
+    def print_board(self):
+        board = np.vectorize(self.piece_id_to_char.get)(self.board)
+        board = np.array([''.join(row) for row in board])
+        print()
+        for row in board:
+            print(row)
+        print()
 
     def make_move(self, is_our_turn=True):
         if not is_our_turn:
             return
 
-        assert self.board is not None
-        print(self.board)
+        if self.i == 0:
+            self.print_board()
+        self.i = (self.i+1) % 30
