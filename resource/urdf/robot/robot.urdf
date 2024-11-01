@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="stretch">
+<robot name="robot">
   <link name="world_base"/>
   <link name="world_base_z_lift"/>
 
@@ -39,8 +39,7 @@
   </joint>
 
   <!-- original base offset:       xyz="-0.087526 -0.001626 0.081009" -->
- 
-<robot name="robot">
+
  <link
     name="base_link">
     <inertial>
