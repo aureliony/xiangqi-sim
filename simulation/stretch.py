@@ -1,6 +1,7 @@
+import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import pybullet
-from PIL import Image
 
 
 def initAxis(center, quater):
@@ -15,15 +16,13 @@ def initAxis(center, quater):
 
 
 class Robot:
-    def __init__(self, start_pos=[0.4,0.3,0.4], urdf_file=None, resource_dir=None, project_root_dir=None):
+    def __init__(self, start_pos, obj_indices, urdf_file=None):
         self.gripperMaxForce = 1000.0
         self.armMaxForce = 200.0
 
-        # Unused variables for now
-        # self.start_pos = start_pos
-        # self.urdf_file = urdf_file
-        # self.project_dir = project_root_dir
-        # self.resource_dir = resource_dir
+        self.obj_indices = obj_indices
+        self.board_id = obj_indices[0]
+        self.urdf_file = urdf_file
 
         self.robot_id = pybullet.loadURDF(urdf_file, start_pos)
 
@@ -46,7 +45,7 @@ class Robot:
         pybullet.resetJointState(self.robot_id, 4, 0.5)
 
         image_aspect_ratio = 1.5
-        self.image_height = 640
+        self.image_height = 320
         self.image_width = int(image_aspect_ratio * self.image_height)
         self.board_image = None # shape is (height, width, 4), RGBA format
         self.board_seg_mask = None
@@ -91,8 +90,38 @@ class Robot:
         )
 
         width, height, rgbPixels, depthPixels, segmentationMaskBuffer = cameraImage
-        self.board_image = rgbPixels
-        self.board_seg_mask = segmentationMaskBuffer
+
+        indices = np.argwhere(segmentationMaskBuffer == self.board_id)
+        src_board_coords = self.get_board_coordinates(indices)
+        dst_board_coords = np.array([
+            [0, 0],
+            [0, self.image_width-1],
+            [self.image_height-1, 0],
+            [self.image_height-1, self.image_width-1]
+        ], dtype=np.float32) # y,x format
+        transform_matrix = cv2.getPerspectiveTransform(src_board_coords[:, ::-1], dst_board_coords[:, ::-1]) # cast to x,y format
+        dst_size = (self.image_width, self.image_height)
+        transformed_board = cv2.warpPerspective(segmentationMaskBuffer.astype(np.float64), transform_matrix, dst_size)
+        # transformed_image = cv2.warpPerspective(rgbPixels.astype(np.float64), transform_matrix, dst_size)
+
+        # plt.imshow(segmentationMaskBuffer, cmap='viridis')
+        # plt.savefig('segmentationMaskBuffer.png', bbox_inches='tight')
+        plt.imshow(transformed_board, cmap='viridis')
+        plt.savefig('transformed_board.png', bbox_inches='tight')
+
+        self.board_seg_mask = transformed_board
+        # self.board_image = transformed_image
+
+
+    def get_board_coordinates(self, indices: np.ndarray):
+        rect = np.zeros((4, 2), dtype=np.float32)
+        s = indices.sum(axis=1)
+        diff = np.diff(indices, axis=1)
+        rect[0] = indices[np.argmin(s)] # top left
+        rect[1] = indices[np.argmax(diff)] # top right
+        rect[2] = indices[np.argmin(diff)] # bottom left
+        rect[3] = indices[np.argmax(s)] # bottom right
+        return rect
 
     def adjust_lift_height(self, deltaY: float) -> None:
         """
@@ -105,9 +134,9 @@ class Robot:
 
         lift_state = pybullet.getJointState(self.robot_id, lift_id)
         lift_pos = lift_state[0]
-        print("current lift pos:", lift_pos)
+        # print("current lift pos:", lift_pos)
         target_lift_pos = lift_pos + deltaY
-        print("target lift pos:", target_lift_pos)
+        # print("target lift pos:", target_lift_pos)
 
         pybullet.setJointMotorControl2(
             bodyIndex=self.robot_id,
@@ -117,9 +146,9 @@ class Robot:
         )
 
     def make_move(self):
-        assert self.board_image is not None
+        # assert self.board_image is not None
         assert self.board_seg_mask is not None
-        self.adjust_lift_height(0.1)
+        self.adjust_lift_height(0.001)
         # image = Image.fromarray(self.board_image, 'RGBA')
         # image.save('board.png')
         # exit()

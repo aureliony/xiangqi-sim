@@ -10,6 +10,8 @@ pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
 
 pybullet.setGravity(0, 0, -1.81)
+pybullet.setRealTimeSimulation(1)
+
 
 def initAxis(center, quater):
     rot_mat = pybullet.getMatrixFromQuaternion(quater)
@@ -27,17 +29,9 @@ plane_id = pybullet.loadURDF("resource/urdf/plane.urdf", [0, 0, 0])
 plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
 pybullet.changeVisualShape(0, -1, textureUniqueId=plane_texture_id)
 
-################ Robot
-mobot_urdf_file = "resource/urdf/stretch/stretch.urdf"
-mobot = Robot(start_pos=[0.0,0.8,0.05], urdf_file=mobot_urdf_file)
 
-for _ in range(30):
-    pybullet.stepSimulation()
-
-
+################ Table
 urdf_dir = "resource/urdf"
-
-# table initialization
 
 table_position = [0, 0, 0]
 table_scaling = 1.0
@@ -50,16 +44,7 @@ table_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"table.urdf"),\
 table_texture_id = pybullet.loadTexture("resource/texture/table.png")
 pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
 
-
-for _ in range(20):
-    pybullet.stepSimulation()
-
-pybullet.changeVisualShape(mobot.robot_id,0,rgbaColor=[1,0,0,1])
-pybullet.changeVisualShape(mobot.robot_id,1,rgbaColor=[0,1,0,1])
-
-pybullet.setRealTimeSimulation(1)
-
-# board simulation
+################ Board
 board_position = [table_position[0] + 0.08, table_position[1] - 0.05, 0.6]
 board_scaling = 0.5
 board_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi])
@@ -71,6 +56,8 @@ board_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chessboard
 pybullet.changeVisualShape(board_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 
 # CHESS PIECES #############
+PIECE_MASS = 0.01
+
 # Black pieces
 b_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2])
 cp_scaling = 0.23
@@ -85,7 +72,7 @@ b1_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b1_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b1_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b1_id, -1, mass=0.01)
+pybullet.changeDynamics(b1_id, -1, mass=PIECE_MASS)
 
 #b2
 b2_position = [table_position[0] + 0.07, table_position[1] - 0.37, 0.7]
@@ -96,7 +83,7 @@ b2_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b2_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b2_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b2_id, -1, mass=0.01)
+pybullet.changeDynamics(b2_id, -1, mass=PIECE_MASS)
 
 #b3
 b3_position = [table_position[0] - 0.10, table_position[1] - 0.37, 0.7]
@@ -107,7 +94,7 @@ b3_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b3_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b3_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b3_id, -1, mass=0.01)
+pybullet.changeDynamics(b3_id, -1, mass=PIECE_MASS)
 
 #b4
 b4_position = [table_position[0] + 0.155, table_position[1] - 0.37, 0.7]
@@ -118,7 +105,7 @@ b4_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b4_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b4_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b4_id, -1, mass=0.01)
+pybullet.changeDynamics(b4_id, -1, mass=PIECE_MASS)
 
 #b5
 b5_position = [table_position[0] - 0.185, table_position[1] - 0.37, 0.7]
@@ -129,7 +116,7 @@ b5_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b5_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b5_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b5_id, -1, mass=0.01)
+pybullet.changeDynamics(b5_id, -1, mass=PIECE_MASS)
 
 #b6
 b6_position = [table_position[0] + 0.242, table_position[1] - 0.37, 0.7]
@@ -140,7 +127,7 @@ b6_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b6_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b6_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b6_id, -1, mass=0.01)
+pybullet.changeDynamics(b6_id, -1, mass=PIECE_MASS)
 
 #b7
 b7_position = [table_position[0] - 0.27, table_position[1] - 0.37, 0.7]
@@ -151,7 +138,7 @@ b7_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b7_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b7_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b7_id, -1, mass=0.01)
+pybullet.changeDynamics(b7_id, -1, mass=PIECE_MASS)
 
 #b8
 b8_position = [table_position[0] + 0.327, table_position[1] - 0.37, 0.7]
@@ -162,7 +149,7 @@ b8_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b8_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b8_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b8_id, -1, mass=0.01)
+pybullet.changeDynamics(b8_id, -1, mass=PIECE_MASS)
 
 #b9
 b9_position = [table_position[0] - 0.355, table_position[1] - 0.37, 0.7]
@@ -173,7 +160,7 @@ b9_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/b
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b9_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b9_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b9_id, -1, mass=0.01)
+pybullet.changeDynamics(b9_id, -1, mass=PIECE_MASS)
 
 #b10
 b10_position = [table_position[0] + 0.242, table_position[1] - 0.2, 0.7]
@@ -184,7 +171,7 @@ b10_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b10_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b10_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b10_id, -1, mass=0.01)
+pybullet.changeDynamics(b10_id, -1, mass=PIECE_MASS)
 
 #b11
 b11_position = [table_position[0] - 0.27, table_position[1] - 0.2, 0.7]
@@ -195,7 +182,7 @@ b11_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b11_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b11_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b11_id, -1, mass=0.01)
+pybullet.changeDynamics(b11_id, -1, mass=PIECE_MASS)
 
 # black soldiers
 #b12
@@ -207,7 +194,7 @@ b12_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b12_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b12_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b12_id, -1, mass=0.01)
+pybullet.changeDynamics(b12_id, -1, mass=PIECE_MASS)
 
 #b13
 b13_position = [table_position[0] + 0.155, table_position[1] - 0.12, 0.7]
@@ -218,7 +205,7 @@ b13_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b13_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b13_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b13_id, -1, mass=0.01)
+pybullet.changeDynamics(b13_id, -1, mass=PIECE_MASS)
 
 #b14
 b14_position = [table_position[0] - 0.015, table_position[1] - 0.12, 0.7]
@@ -229,7 +216,7 @@ b14_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b14_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b14_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b14_id, -1, mass=0.01)
+pybullet.changeDynamics(b14_id, -1, mass=PIECE_MASS)
 
 #b15
 b15_position = [table_position[0] - 0.185, table_position[1] - 0.12, 0.7]
@@ -240,7 +227,7 @@ b15_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b15_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b15_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b15_id, -1, mass=0.01)
+pybullet.changeDynamics(b15_id, -1, mass=PIECE_MASS)
 
 #b16
 b16_position = [table_position[0] - 0.355, table_position[1] - 0.12, 0.7]
@@ -251,12 +238,12 @@ b16_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=b_orientation)
 pybullet.changeVisualShape(b16_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(b16_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(b16_id, -1, mass=0.01)
+pybullet.changeDynamics(b16_id, -1, mass=PIECE_MASS)
 #############################
 
 # RED PIECES
 
-r_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi * 3 / 2])
+r_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2])
 cp_scaling = 0.23
 obj_friction_ceof = 4000.0
 
@@ -269,7 +256,7 @@ r1_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r1_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r1_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r1_id, -1, mass=0.01)
+pybullet.changeDynamics(r1_id, -1, mass=PIECE_MASS)
 
 #r2
 r2_position = [table_position[0] + 0.07, table_position[1] + 0.4, 0.7]
@@ -280,7 +267,7 @@ r2_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r2_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r2_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r2_id, -1, mass=0.01)
+pybullet.changeDynamics(r2_id, -1, mass=PIECE_MASS)
 
 #r3
 r3_position = [table_position[0] - 0.10, table_position[1] + 0.4, 0.7]
@@ -291,7 +278,7 @@ r3_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r3_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r3_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r3_id, -1, mass=0.01)
+pybullet.changeDynamics(r3_id, -1, mass=PIECE_MASS)
 
 #r4
 r4_position = [table_position[0] + 0.155, table_position[1] + 0.4, 0.7]
@@ -302,7 +289,7 @@ r4_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r4_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r4_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r4_id, -1, mass=0.01)
+pybullet.changeDynamics(r4_id, -1, mass=PIECE_MASS)
 
 #r5
 r5_position = [table_position[0] - 0.185, table_position[1] + 0.4, 0.7]
@@ -313,7 +300,7 @@ r5_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r5_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r5_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r5_id, -1, mass=0.01)
+pybullet.changeDynamics(r5_id, -1, mass=PIECE_MASS)
 
 #r6
 r6_position = [table_position[0] + 0.242, table_position[1] + 0.4, 0.7]
@@ -324,7 +311,7 @@ r6_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r6_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r6_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r6_id, -1, mass=0.01)
+pybullet.changeDynamics(r6_id, -1, mass=PIECE_MASS)
 
 #r7
 r7_position = [table_position[0] - 0.27, table_position[1] + 0.4, 0.7]
@@ -335,7 +322,7 @@ r7_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r7_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r7_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r7_id, -1, mass=0.01)
+pybullet.changeDynamics(r7_id, -1, mass=PIECE_MASS)
 
 #r8
 r8_position = [table_position[0] + 0.327, table_position[1] + 0.4, 0.7]
@@ -346,7 +333,7 @@ r8_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r8_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r8_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r8_id, -1, mass=0.01)
+pybullet.changeDynamics(r8_id, -1, mass=PIECE_MASS)
 
 #r9
 r9_position = [table_position[0] - 0.355, table_position[1] + 0.4, 0.7]
@@ -357,7 +344,7 @@ r9_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/r
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r9_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r9_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r9_id, -1, mass=0.01)
+pybullet.changeDynamics(r9_id, -1, mass=PIECE_MASS)
 
 #r10
 r10_position = [table_position[0] + 0.242, table_position[1] + 0.22, 0.7]
@@ -368,7 +355,7 @@ r10_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r10_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r10_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r10_id, -1, mass=0.01)
+pybullet.changeDynamics(r10_id, -1, mass=PIECE_MASS)
 
 #r11
 r11_position = [table_position[0] - 0.27, table_position[1] + 0.22, 0.7]
@@ -379,7 +366,7 @@ r11_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r11_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r11_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r11_id, -1, mass=0.01)
+pybullet.changeDynamics(r11_id, -1, mass=PIECE_MASS)
 
 # red soldiers
 #r12
@@ -391,7 +378,7 @@ r12_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r12_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r12_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r12_id, -1, mass=0.01)
+pybullet.changeDynamics(r12_id, -1, mass=PIECE_MASS)
 
 #r13
 r13_position = [table_position[0] + 0.155, table_position[1] + 0.14, 0.7]
@@ -402,7 +389,7 @@ r13_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r13_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r13_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r13_id, -1, mass=0.01)
+pybullet.changeDynamics(r13_id, -1, mass=PIECE_MASS)
 
 #r14
 r14_position = [table_position[0] - 0.015, table_position[1] + 0.14, 0.7]
@@ -413,7 +400,7 @@ r14_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r14_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r14_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r14_id, -1, mass=0.01)
+pybullet.changeDynamics(r14_id, -1, mass=PIECE_MASS)
 
 #r15
 r15_position = [table_position[0] - 0.185, table_position[1] + 0.14, 0.7]
@@ -424,7 +411,7 @@ r15_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r15_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r15_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r15_id, -1, mass=0.01)
+pybullet.changeDynamics(r15_id, -1, mass=PIECE_MASS)
 
 #r16
 r16_position = [table_position[0] - 0.355, table_position[1] + 0.14, 0.7]
@@ -435,15 +422,21 @@ r16_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/
                                   baseOrientation=r_orientation)
 pybullet.changeVisualShape(r16_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 pybullet.changeDynamics(r16_id, -1, lateralFriction=obj_friction_ceof)
-pybullet.changeDynamics(r16_id, -1, mass=0.01)
+pybullet.changeDynamics(r16_id, -1, mass=PIECE_MASS)
 #############################
 
+
+################ Robot
+mobot_urdf_file = "resource/urdf/stretch/stretch.urdf"
+
+obj_indices = [board_id]
+mobot = Robot([0.0,0.8,0.05], obj_indices, urdf_file=mobot_urdf_file)
 
 # for j in range(pybullet.getNumJoints(mobot.robotId)):
 #     print(pybullet.getJointInfo(mobot.robotId,j))
 
-for _ in range(30):
-    pybullet.stepSimulation()
+pybullet.changeVisualShape(mobot.robot_id,0,rgbaColor=[1,0,0,1])
+pybullet.changeVisualShape(mobot.robot_id,1,rgbaColor=[0,1,0,1])
 
 mobot.update_observations()
 
