@@ -172,10 +172,12 @@ class Robot:
     
     def print_board(self):
         board = np.vectorize(self.piece_id_to_char.get)(self.board)
-        board = np.array([''.join(row) for row in board])
+        board = np.array(['|'.join(row) for row in board])
         print()
+        print('-' * 28)
         for row in board:
-            print(row)
+            print('|' + row + '|')
+            print('-' * 28)
         print()
 
     def make_move(self, is_our_turn=True):
