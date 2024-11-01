@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pybullet
 
-from simulation.stretch import Robot
+from simulation.robot import Robot
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
@@ -427,7 +427,7 @@ pybullet.changeDynamics(r16_id, -1, mass=PIECE_MASS)
 
 
 ################ Robot
-mobot_urdf_file = "resource/urdf/stretch/stretch.urdf"
+mobot_urdf_file = "resource/urdf/robot/robot.urdf"
 
 obj_indices = [board_id]
 mobot = Robot([0.0,0.8,0.05], obj_indices, urdf_file=mobot_urdf_file)
