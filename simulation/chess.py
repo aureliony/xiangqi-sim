@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pybullet
 
-from robot import *
+from simulation.robot import *
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
