@@ -962,7 +962,7 @@
     <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
-            <box size="0.1 0.03 0.03" />
+            <box size="0.08 0.03 0.03" />
           </geometry>
           <material name="Cyan">
             <color rgba="0 1.0 1.0 1.0"/>
@@ -971,7 +971,7 @@
         <collision>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
-            <box size="0.1 0.05 0.05" />
+            <box size="0.08 0.03 0.03" />
           </geometry>
     </collision>
      <inertial>
@@ -985,7 +985,7 @@
     <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
-            <box size="0.01 0.03 0.03" />
+            <box size="0.005 0.03 0.03" />
           </geometry>
           <material name="black">
             <color rgba="0 .0 .0 1.0"/>
@@ -994,9 +994,9 @@
     <collision>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
-           <box size="0.01 0.03 0.03" />
+           <box size="0.005 0.03 0.03" />
           </geometry>
-          <dynamics friction="0.5"/> <!-- Friction for contact with external objects -->
+          <dynamics friction="0.9"/> <!-- Friction for contact with external objects -->
     </collision>
      <inertial>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -1016,14 +1016,15 @@
       link="left_link_finger" />
     <axis
       xyz="1 0 0" />
-    <limit effort="100" lower="-0.03" upper="0.02" velocity="1.0"/>
+    <limit effort="100" lower="-0.03" upper="0.005" velocity="1.0"/>
+    <dynamics damping="0.1" friction="0.1"/>
   </joint>
 
  <link name="right_link_finger">
     <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
-            <box size="0.01 0.03 0.03" />
+            <box size="0.005 0.03 0.03" />
           </geometry>
           <material name="black">
             <color rgba="0 .0 .0 1.0"/>
@@ -1032,9 +1033,9 @@
                 <collision>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
-           <box size="0.01 0.03 0.03" />
+           <box size="0.005 0.03 0.03" />
           </geometry>
-          <dynamics friction="0.5"/> <!-- Friction for contact with external objects -->
+          <dynamics friction="0.9"/> <!-- Friction for contact with external objects -->
     </collision>
      <inertial>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -1054,7 +1055,8 @@
       link="right_link_finger" />
     <axis
       xyz="1 0 0" />
-    <limit effort="100" lower="-0.02" upper="0.03" velocity="1.0"/>
+    <limit effort="100" lower="-0.005" upper="0.03" velocity="1.0"/>
+    <dynamics damping="0.1" friction="0.1"/>
   </joint>
 
 </robot>
