@@ -47,13 +47,33 @@ def arm_control(robot, p, up=0, stretch=0, roll=0, yaw=0):
 
 
 def gripper_control(mobot, p, cmd=0):
-    # 1 is open, 0 is close
-    if cmd == 1:
-        p.setJointMotorControl2(mobot.robot_id,18,p.POSITION_CONTROL,targetPosition=0.1,force=10)      # joint left finger
-        p.setJointMotorControl2(mobot.robot_id,19,p.POSITION_CONTROL,targetPosition=-0.1,force=10)    # joint right gripper
-    elif cmd == 0:
-        p.setJointMotorControl2(mobot.robot_id,18,p.POSITION_CONTROL,targetPosition=-1,force=2)      # joint left finger
-        p.setJointMotorControl2(mobot.robot_id,19,p.POSITION_CONTROL,targetPosition=1,force=2)    # joint right gripper
+    # Configuration for centered and gentle grip
+    open_position = 0.015  # Slightly open for holding
+    close_position = 0.001  # Close to center without overlap
+    symmetric_force = 1.5  # Gentle force to prevent sliding
+
+    if cmd == 1:  # Open slightly
+        p.setJointMotorControl2(mobot.robot_id, 18, p.POSITION_CONTROL,
+                                targetPosition=open_position,
+                                force=symmetric_force)
+
+        p.setJointMotorControl2(mobot.robot_id, 19, p.POSITION_CONTROL,
+                                targetPosition=-open_position,
+                                force=symmetric_force)
+
+    elif cmd == 0:  # Close gently around the chess piece
+        # Close fingers to a gentle contact without pushing inward
+        p.setJointMotorControl2(mobot.robot_id, 18, p.POSITION_CONTROL,
+                                targetPosition=-close_position,
+                                force=symmetric_force)
+
+        p.setJointMotorControl2(mobot.robot_id, 19, p.POSITION_CONTROL,
+                                targetPosition=close_position,
+                                force=symmetric_force)
+
+    # Optionally, after closing, switch to torque control to hold without squeezing further
+    p.setJointMotorControl2(mobot.robot_id, 18, p.TORQUE_CONTROL, force=0.1)
+    p.setJointMotorControl2(mobot.robot_id, 19, p.TORQUE_CONTROL, force=0.1)
 
 class Robot:
     def __init__(self, start_pos, obj_indices, piece_id_to_char, urdf_file=None):
