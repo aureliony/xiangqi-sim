@@ -48,9 +48,12 @@ def arm_control(robot, p, up=0, stretch=0, roll=0, yaw=0):
 
 def gripper_control(mobot, p, cmd=0):
     # 1 is open, 0 is close
-    p.setJointMotorControl2(mobot.robot_id,18,p.VELOCITY_CONTROL,targetVelocity=-cmd,force=1000)      # joint left finger
-    p.setJointMotorControl2(mobot.robot_id,19,p.VELOCITY_CONTROL,targetVelocity=cmd,force=1000)    # joint right gripper
-    
+    if cmd == 1:
+        p.setJointMotorControl2(mobot.robot_id,18,p.POSITION_CONTROL,targetPosition=0.1,force=10)      # joint left finger
+        p.setJointMotorControl2(mobot.robot_id,19,p.POSITION_CONTROL,targetPosition=-0.1,force=10)    # joint right gripper
+    elif cmd == 0:
+        p.setJointMotorControl2(mobot.robot_id,18,p.POSITION_CONTROL,targetPosition=-1,force=2)      # joint left finger
+        p.setJointMotorControl2(mobot.robot_id,19,p.POSITION_CONTROL,targetPosition=1,force=2)    # joint right gripper
 
 class Robot:
     def __init__(self, start_pos, obj_indices, piece_id_to_char, urdf_file=None):

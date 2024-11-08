@@ -994,7 +994,7 @@
     <collision>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
-           <box size="0.01 0.03 0.05" />
+           <box size="0.01 0.03 0.03" />
           </geometry>
     </collision>
      <inertial>
@@ -1016,6 +1016,7 @@
     <axis
       xyz="1 0 0" />
     <limit effort="100" lower="-0.03" upper="0.02" velocity="1.0"/>
+    <dynamics friction="0.5" damping="0.1"/> <!-- Add friction here -->
   </joint>
 
  <link name="right_link_finger">
@@ -1053,6 +1054,7 @@
     <axis
       xyz="1 0 0" />
     <limit effort="100" lower="-0.02" upper="0.03" velocity="1.0"/>
+    <dynamics friction="0.5" damping="0.1"/> <!-- Add friction here -->
   </joint>
 
 </robot>

@@ -4,12 +4,14 @@ import time
 import numpy as np
 import pybullet
 
-from simulation.robot import *
+# from simulation.robot import *
+from robot import *
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
+# pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_WIREFRAME, 1) # for debugging
 
-pybullet.setGravity(0, 0, -9.81)
+pybullet.setGravity(0, 0, -1.81)
 pybullet.setRealTimeSimulation(1)
 
 
@@ -26,16 +28,16 @@ def initAxis(center, quater):
 root_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),"../")
 
 ################ Plane Environment
-#plane_id = pybullet.loadURDF(os.path.join(root_dir,"resource/urdf/plane.urdf"), [0, 0, 0])
-#plane_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/texture1.jpg"))
-plane_id = pybullet.loadURDF("resource/urdf/plane.urdf", [0, 0, 0])
-plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
+plane_id = pybullet.loadURDF(os.path.join(root_dir,"resource/urdf/plane.urdf"), [0, 0, 0])
+plane_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/texture1.jpg"))
+# plane_id = pybullet.loadURDF("resource/urdf/plane.urdf", [0, 0, 0])
+# plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
 pybullet.changeVisualShape(0, -1, textureUniqueId=plane_texture_id)
 
 
 ################ Table
-#urdf_dir = os.path.join(root_dir,"resource/urdf")
-urdf_dir = "resource/urdf"
+urdf_dir = os.path.join(root_dir,"resource/urdf")
+# urdf_dir = "resource/urdf"
 
 table_position = [0, 0, 0]
 table_scaling = 1.0
@@ -45,8 +47,8 @@ table_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"table.urdf"),\
                                    basePosition=table_position,\
                                    baseOrientation=table_orientation,\
                                    globalScaling=table_scaling)
-#table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
-table_texture_id = pybullet.loadTexture("resource/texture/table.png")
+table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
+# table_texture_id = pybullet.loadTexture("resource/texture/table.png")
 pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
 
 ################ Board
@@ -469,11 +471,12 @@ piece_id_to_char = {
 }
 
 ################ Robot
-# mobot_urdf_file = os.path.join(root_dir,"resource/urdf/robot/robot.urdf")
-mobot_urdf_file = "resource/urdf/robot/robot.urdf"
+mobot_urdf_file = os.path.join(root_dir,"resource/urdf/robot/robot.urdf")
+# mobot_urdf_file = "resource/urdf/robot/robot.urdf"
 
 obj_indices = [board_id]
-mobot = Robot([0.0,0.6,0.05], obj_indices, piece_id_to_char, urdf_file=mobot_urdf_file)
+mobot = Robot([0.22,0.8,0], obj_indices, piece_id_to_char, urdf_file=mobot_urdf_file)
+
 
 # for j in range(pybullet.getNumJoints(mobot.robotId)):
 #     print(pybullet.getJointInfo(mobot.robotId,j))
@@ -530,64 +533,68 @@ while True:
             forward=0
 
         # lifting
-        if (keycode == ord('z') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+        if (keycode == ord('u') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             up = 1
-        if (keycode == ord('z') and (keystate & pybullet.KEY_WAS_RELEASED)):
+        if (keycode == ord('u') and (keystate & pybullet.KEY_WAS_RELEASED)):
             up = 0
-        if (keycode == ord('x') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+        if (keycode == ord('d') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             up = -1
-        if (keycode == ord('x') and (keystate & pybullet.KEY_WAS_RELEASED)):
+        if (keycode == ord('d') and (keystate & pybullet.KEY_WAS_RELEASED)):
             up = 0
 
-        # stretching -- not needed
-        # if (keycode == ord('a') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-        #     stretch = -1
-        # if (keycode == ord('a') and (keystate & pybullet.KEY_WAS_RELEASED)):
-        #     stretch = 0
-        # if (keycode == ord('d') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-        #     stretch = 1
-        # if (keycode == ord('d') and (keystate & pybullet.KEY_WAS_RELEASED)):
-        #     stretch = 0
-
-        # roll
-        if (keycode == ord('r') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            roll = 1
-        if (keycode == ord('r') and (keystate & pybullet.KEY_WAS_RELEASED)):
-            roll = 0
+        # stretching -- forward/backward
+        if (keycode == ord('b') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+            stretch = -1
+        if (keycode == ord('b') and (keystate & pybullet.KEY_WAS_RELEASED)):
+            stretch = 0
         if (keycode == ord('f') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            roll = -1
+            stretch = 1
         if (keycode == ord('f') and (keystate & pybullet.KEY_WAS_RELEASED)):
-            roll = 0
+            stretch = 0
 
-        # yaw
-        if (keycode == ord('y') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            yaw = 1
-        if (keycode == ord('y') and (keystate & pybullet.KEY_WAS_RELEASED)):
-            yaw = 0
-        if (keycode == ord('h') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            yaw = -1
-        if (keycode == ord('h') and (keystate & pybullet.KEY_WAS_RELEASED)):
-            yaw = 0
+        # roll -- not needed
+        # if (keycode == ord('r') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+        #     roll = 1
+        # if (keycode == ord('r') and (keystate & pybullet.KEY_WAS_RELEASED)):
+        #     roll = 0
+        # if (keycode == ord('f') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+        #     roll = -1
+        # if (keycode == ord('f') and (keystate & pybullet.KEY_WAS_RELEASED)):
+        #     roll = 0
+
+        # yaw -- not needed
+        # if (keycode == ord('y') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+        #     yaw = 1
+        # if (keycode == ord('y') and (keystate & pybullet.KEY_WAS_RELEASED)):
+        #     yaw = 0
+        # if (keycode == ord('h') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+        #     yaw = -1
+        # if (keycode == ord('h') and (keystate & pybullet.KEY_WAS_RELEASED)):
+        #     yaw = 0
 
 
         # gripper
-        if (keycode == ord('q') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            gripper_open = -1
-        if (keycode == ord('q') and (keystate & pybullet.KEY_WAS_RELEASED)):
-            gripper_open = 0
-        if (keycode == ord('e') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            gripper_open = 1
-        if (keycode == ord('e') and (keystate & pybullet.KEY_WAS_RELEASED)):
-            gripper_open = 0
+        # open gripper when 'o' is pressed
+        if (keycode == ord('o') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+            gripper_control(mobot, pybullet, cmd=1)
+        # if (keycode == ord('o') and (keystate & pybullet.KEY_WAS_RELEASED)):
+        #     gripper_open = False
+        # close gripper when 'c' is pressed
+        if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+           gripper_control(mobot, pybullet, cmd=0)
+        # if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_RELEASED)):
+        #     gripper_open = True
 
     base_control(mobot, pybullet, forward, turn)
     arm_control(mobot, pybullet, up, stretch, roll, yaw)
 
-    # if gripper_open == 1:
-    #     constraint = attach(21, mobot.robotId, 18)
+    # if gripper_open:
+    #     gripper_control(mobot, pybullet, cmd=1)
+    #     # constraint = attach(21, mobot.robotId, 18)
     # elif gripper_open == -1:
-    #     detach(constraint)
-    #     constraint = None
+    #     gripper_control(mobot, pybullet, cmd=0)
+    #     # detach(constraint)
+        # constraint = None
 
     mobot.update_observations()
 
