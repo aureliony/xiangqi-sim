@@ -67,7 +67,7 @@ PIECE_MASS = 0.01
 
 # Black pieces
 b_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2])
-cp_scaling = 0.23
+cp_scaling = 0.20
 obj_friction_ceof = 4000.0
 
 #b1
@@ -251,7 +251,7 @@ pybullet.changeDynamics(b16_id, -1, mass=PIECE_MASS)
 # RED PIECES
 
 r_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2])
-cp_scaling = 0.23
+cp_scaling = 0.20
 obj_friction_ceof = 4000.0
 
 #r1
