@@ -1,7 +1,10 @@
+import asyncio
+
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import pybullet
+
+from engine.pikafish import Pikafish
 
 
 def initAxis(center, quater):
@@ -75,14 +78,16 @@ def gripper_control(mobot, p, cmd=0):
     p.setJointMotorControl2(mobot.robot_id, 18, p.TORQUE_CONTROL, force=0.1)
     p.setJointMotorControl2(mobot.robot_id, 19, p.TORQUE_CONTROL, force=0.1)
 
+
 class Robot:
-    def __init__(self, start_pos, obj_indices, piece_id_to_char, urdf_file=None):
+    def __init__(self, start_pos, obj_indices, piece_id_to_char, piece_id_to_fen, urdf_file=None):
         self.gripperMaxForce = 1000.0
         self.armMaxForce = 200.0
 
         self.obj_indices = obj_indices
         self.board_id = obj_indices[0]
         self.piece_id_to_char = piece_id_to_char
+        self.piece_id_to_fen = piece_id_to_fen
         self.urdf_file = urdf_file
 
         self.robot_id = pybullet.loadURDF(urdf_file, start_pos, globalScaling=1.2)
@@ -112,6 +117,8 @@ class Robot:
         # self.board_seg_mask = None
         self.board = None
         self.i = 0
+
+        self.engine = Pikafish()
 
     def get_joint_index(self, name: str) -> int:
         """
@@ -183,20 +190,19 @@ class Robot:
         self.board = board.astype(int)
 
         # For debugging
-        # BLACK = (0,0,0)
+        # WHITE: tuple[Any | floating[Any]] = (np.max(transformed_board)+1,)
         # for x in x_vals:
         #     x = round(x)
-        #     cv2.line(transformed_board, (x, 0), (x, height), BLACK, 1)
+        #     cv2.line(transformed_board, (x, 0), (x, height), WHITE, 1)
         # for y in y_vals:
         #     y = round(y)
-        #     cv2.line(transformed_board, (0, y), (width, y), BLACK, 1)
+        #     cv2.line(transformed_board, (0, y), (width, y), WHITE, 1)
         # for x in x_coords:
         #     x = round(x)
         #     for y in y_coords:
         #         y = round(y)
-        #         cv2.circle(transformed_board, (x,y), radius=0, color=BLACK, thickness=-1)
-        # plt.imsave('transformed_board.png', transformed_board)
-
+        #         cv2.circle(transformed_board, (x,y), radius=0, color=WHITE, thickness=-1)
+        # plt.imsave('transformed_board.png', transformed_board, cmap='inferno')
 
     def get_board_coordinates(self, indices: np.ndarray):
         rect = np.zeros((4, 2), dtype=np.float32)
@@ -229,9 +235,9 @@ class Robot:
             controlMode=pybullet.POSITION_CONTROL,
             targetPosition=target_lift_pos
         )
-    
+
     def print_board(self):
-        board = np.vectorize(self.piece_id_to_char.get)(self.board)
+        board = np.vectorize(self.piece_id_to_char.__getitem__)(self.board)
         board = np.array(['|'.join(row) for row in board])
         print()
         print('-' * 28)
@@ -239,14 +245,51 @@ class Robot:
             print('|' + row + '|')
             print('-' * 28)
         print()
+    
+    def board_to_fen(self, board, turn):
+        assert board.shape == (10, 9)
+        # Initialize the FEN string
+        fen_rows = []
+
+        # Iterate over each row in the board matrix
+        for row in board:
+            fen_row = []
+            empty_count = 0
+
+            for piece in row:
+                fen_piece = self.piece_id_to_fen[piece]
+                if fen_piece == '.':
+                    empty_count += 1
+                else:
+                    if empty_count > 0:
+                        fen_row.append(str(empty_count))
+                        empty_count = 0
+                    fen_row.append(fen_piece)
+
+            # If there were empty spaces at the end of the row
+            if empty_count > 0:
+                fen_row.append(str(empty_count))
+
+            fen_rows.append(''.join(fen_row))
+
+        # Join the rows with '/' to create the full FEN string
+        fen = '/'.join(fen_rows)
+        fen_turn = "w" if turn else "b"
+        fen += f" {fen_turn} - - 0 1" # TODO: implement halfmoves and fullmoves
+        return fen
 
     def make_move(self, is_our_turn=True):
         if not is_our_turn:
             return
 
-        if self.i == 0:
-            self.print_board()
-        self.i = (self.i+1) % 30
+        # if self.i == 0:
+        #     self.print_board()
+        # self.i = (self.i+1) % 30
+
+        fen = self.board_to_fen(self.board, is_our_turn)
+        # print(fen)
+        bestmove = asyncio.run(self.engine.get_best_move(fen))
+        print("bestmove:", bestmove, flush=True)
 
     def get_position(self):
         return pybullet.getBasePositionAndOrientation(self.robot_id)[0]

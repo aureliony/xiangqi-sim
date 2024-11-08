@@ -1,11 +1,11 @@
 import os
 import time
+from collections import defaultdict
 
 import numpy as np
 import pybullet
 
-# from simulation.robot import *
-from robot import *
+from simulation.robot import *
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
@@ -432,8 +432,8 @@ pybullet.changeDynamics(r16_id, -1, lateralFriction=obj_friction_ceof)
 pybullet.changeDynamics(r16_id, -1, mass=PIECE_MASS)
 #############################
 
-piece_id_to_char = {
-    board_id: "  ",
+piece_id_to_char = defaultdict(lambda: "  ", {
+    # board_id: "  ",
 
     b1_id:  "将",
     b2_id:  "士",
@@ -468,14 +468,53 @@ piece_id_to_char = {
     r14_id: "兵",
     r15_id: "兵",
     r16_id: "兵",
-}
+})
+
+piece_id_to_fen = defaultdict(lambda: ".", {
+    # board_id: "  ",
+
+    b1_id:  "k",
+    b2_id:  "a",
+    b3_id:  "a",
+    b4_id:  "b",
+    b5_id:  "b",
+    b6_id:  "n",
+    b7_id:  "n",
+    b8_id:  "r",
+    b9_id:  "r",
+    b10_id: "c",
+    b11_id: "c",
+    b12_id: "p",
+    b13_id: "p",
+    b14_id: "p",
+    b15_id: "p",
+    b16_id: "p",
+
+    r1_id:  "K",
+    r2_id:  "A",
+    r3_id:  "A",
+    r4_id:  "B",
+    r5_id:  "B",
+    r6_id:  "N",
+    r7_id:  "N",
+    r8_id:  "R",
+    r9_id:  "R",
+    r10_id: "C",
+    r11_id: "C",
+    r12_id: "P",
+    r13_id: "P",
+    r14_id: "P",
+    r15_id: "P",
+    r16_id: "P",
+})
+
 
 ################ Robot
 mobot_urdf_file = os.path.join(root_dir,"resource/urdf/robot/robot.urdf")
 # mobot_urdf_file = "resource/urdf/robot/robot.urdf"
 
 obj_indices = [board_id]
-mobot = Robot([0.22,0.8,0], obj_indices, piece_id_to_char, urdf_file=mobot_urdf_file)
+mobot = Robot([0.22,0.8,0], obj_indices, piece_id_to_char, piece_id_to_fen, urdf_file=mobot_urdf_file)
 
 
 # for j in range(pybullet.getNumJoints(mobot.robotId)):
