@@ -1,170 +1,128 @@
+import heapq
 import numpy as np
-import time
 import pybullet as p
-import pybullet_data
-from stretch import StretchRobot
-from path_planning import AStarPlanner, RRTPlanner
-from object_detection import PieceDetector
-from advanced_techniques import SliderControl, ObstacleAvoidance
-from chinese_chess_engine_alpha_zero import Game, Board
 
-# Setup the pybullet simulation
-def setup_simulation():
-    p.connect(p.GUI)
-    p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    p.setGravity(0, 0, -9.81)  # Set gravity for realistic simulation
-    p.loadURDF("plane.urdf")
-    table_id = p.loadURDF("table.urdf", basePosition=[0, 0, 0])
-    cube_id = p.loadURDF("cube.urdf", basePosition=[0.5, 0.5, 0.1])
-    robot = StretchRobot(urdf_path="stretch.urdf")
+class ChineseChessRobot(Robot):
+    def __init__(self, start_pos, obj_indices, piece_id_to_char, urdf_file=None):
+        super().__init__(start_pos, obj_indices, piece_id_to_char, urdf_file)
+        self.grid_size = (9, 10)  # Standard Chinese chess board size
+        self.cell_size = 0.1  # Define the physical size of each cell on the board (in meters)
+        self.board_grid = np.zeros(self.grid_size)  # 0: free, 1: occupied
 
-    # Improve visualization settings
-    p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)
-    p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
-    p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 0)
-    p.resetDebugVisualizerCamera(
-        cameraDistance=1.5,
-        cameraYaw=45,
-        cameraPitch=-30,
-        cameraTargetPosition=[0.5, 0.5, 0]
-    )
-    return robot, table_id, cube_id
+    def set_piece_positions(self):
+        """Update board grid with current piece positions."""
+        for piece_id in self.obj_indices:
+            pos, _ = p.getBasePositionAndOrientation(piece_id)
+            grid_pos = self.world_to_grid(pos)
+            self.board_grid[grid_pos] = 1  # Mark cell as occupied
 
-# Motion planning for robot to move to a target position
-def move_to_position(robot, target_pos):
-    # Initialize path planning algorithm
-    path_planner = AStarPlanner()  # Use A* planner for precise motion planning
-    obstacle_avoidance = ObstacleAvoidance()  # Module to handle dynamic obstacles
-    path = path_planner.plan(robot.get_current_position(), target_pos)
+    def world_to_grid(self, pos):
+        """Convert world coordinates to grid coordinates."""
+        x, y, _ = pos
+        col = int((x + 0.45) // self.cell_size)
+        row = int((y + 0.45) // self.cell_size)
+        return (row, col)
 
-    # Move through the planned path smoothly
-    for waypoint in path:
-        if obstacle_avoidance.is_obstacle_nearby(waypoint):
-            print("Obstacle detected, recalculating path...")
-            path = path_planner.plan(robot.get_current_position(), target_pos)
-            continue
+    def grid_to_world(self, grid_pos):
+        """Convert grid coordinates to world coordinates."""
+        row, col = grid_pos
+        x = col * self.cell_size - 0.45
+        y = row * self.cell_size - 0.45
+        return [x, y, 0.7]  # Set the height (z) above the board
 
-        if not robot.check_singularity(waypoint):  # Avoid singularities
-            robot.move_to(waypoint)
-            time.sleep(0.02)  # Reduced delay for smoother and faster movement
-        else:
-            print("Singularity detected, recalculating path...")
-            path = path_planner.plan(robot.get_current_position(), target_pos)
+    def a_star_search(self, start, goal):
+        """A* search for finding a path from start to goal on the grid."""
+        rows, cols = self.grid_size
+        open_set = []
+        heapq.heappush(open_set, (0, start))
+        came_from = {}
+        cost_so_far = {start: 0}
 
-# Motion planning for robot to move and grasp chess pieces
-def move_and_grasp(robot, start_pos, target_pos):
-    move_to_position(robot, start_pos)  # Move to the start position
+        while open_set:
+            _, current = heapq.heappop(open_set)
 
-    # Perform grasping action
-    if robot.is_reachable(start_pos):
-        robot.adjust_for_grasp(start_pos)  # Adjust arm for optimal grasp
-        robot.grasp(start_pos)  # Grasp the piece
-        if not robot.check_grasp_stability():
-            print("Grasp failed, retrying...")
-            robot.grasp(start_pos)
-    else:
-        print("Start position is not reachable.")
+            if current == goal:
+                return self.reconstruct_path(came_from, current)
 
-    # Move the piece to the new target position
-    move_to_position(robot, target_pos)
-    robot.release()
+            for neighbor in self.get_neighbors(current):
+                if self.board_grid[neighbor] == 1:  # Skip occupied cells
+                    continue
+                new_cost = cost_so_far[current] + 1
+                if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                    cost_so_far[neighbor] = new_cost
+                    priority = new_cost + self.heuristic(neighbor, goal)
+                    heapq.heappush(open_set, (priority, neighbor))
+                    came_from[neighbor] = current
+        return None  # No path found
 
-    # Move to a safe position after releasing
-    safe_pos = [target_pos[0], target_pos[1], target_pos[2] + 0.1]
-    move_to_position(robot, safe_pos)
+    def heuristic(self, a, b):
+        """Heuristic function for A* (Manhattan distance)."""
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-# Main game loop to handle the gameplay and interactions
-def play_chinese_chess():
-    # Setup simulation environment
-    robot, table_id, cube_id = setup_simulation()
+    def get_neighbors(self, pos):
+        """Get valid neighbors for a position on the grid."""
+        row, col = pos
+        neighbors = [(row + dr, col + dc) for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]]
+        return [(r, c) for r, c in neighbors if 0 <= r < self.grid_size[0] and 0 <= c < self.grid_size[1]]
 
-    # Initialize the chess engine and game logic from ChineseChess-AlphaZero
-    game = Game()
-    board = Board()
-    piece_detector = PieceDetector()
-    slider_control = SliderControl()  # Advanced technique to speed up arm movement
+    def reconstruct_path(self, came_from, current):
+        """Reconstruct the path from A* search."""
+        path = []
+        while current in came_from:
+            path.append(current)
+            current = came_from[current]
+        path.reverse()
+        return path
 
-    while not game.is_game_over():
-        # Get the current board state
-        board_state = board.get_board_state()
-        detected_pieces = piece_detector.detect(board_state)
+    def execute_path(self, path):
+        """Execute the robot movement along a planned path."""
+        for grid_pos in path:
+            target_pos = self.grid_to_world(grid_pos)
+            self.move_arm_to_position(target_pos)
+            time.sleep(1/240)  # Sleep to allow motion completion
 
-        # Evaluate and make the best move using the AlphaZero model
-        best_move = game.get_best_move(board_state)
-        start_pos, target_pos = best_move['from'], best_move['to']
+    def pick_and_place(self, piece_id, start, end):
+        """High-level pick-and-place with collision-avoiding path planning."""
+        self.set_piece_positions()  # Update board grid
 
-        # Move robot to grasp and move the chess piece
-        if piece_detector.verify_piece_presence(start_pos):
-            slider_control.optimize_path(robot)  # Optimize movement using slider control
-            move_and_grasp(robot, start_pos, target_pos)
-        else:
-            print("Piece at start position not detected, recalculating...")
-            continue
+        # Convert board coordinates to grid positions
+        start_grid = self.world_to_grid(start)
+        end_grid = self.world_to_grid(end)
 
-        # Update board state
-        board.update(best_move)
-        game.update(board)
+        # Plan path with A* avoiding obstacles
+        path = self.a_star_search(start_grid, end_grid)
+        if path is None:
+            print("No path found!")
+            return
 
-        # Detect fallen pieces or unexpected situations
-        fallen_pieces = piece_detector.detect_fallen_pieces()
-        if fallen_pieces:
-            print(f"Handling fallen pieces: {fallen_pieces}")
-            for piece in fallen_pieces:
-                recovery_pos = piece['recovery_position']
-                move_and_grasp(robot, piece['current_position'], recovery_pos)
+        # Execute path to pick the piece
+        self.execute_path(path)
 
-    print("Game Over!")
+        # Pick the piece
+        gripper_control(self, p, cmd=0)  # Close gripper
+        time.sleep(1/240)
 
-# Test motion planning for the arm
-def test_motion_planning():
-    # Setup simulation environment
-    robot, _, _ = setup_simulation()
+        # Plan path from start to end position
+        path_to_place = self.a_star_search(start_grid, end_grid)
+        if path_to_place is None:
+            print("No path found to place the piece!")
+            return
 
-    # Define a series of target positions for testing
-    test_positions = [
-        [0.4, 0.3, 0.5],
-        [0.6, 0.3, 0.5],
-        [0.5, 0.5, 0.3],
-        [0.4, 0.4, 0.6]
-    ]
+        # Execute path to place the piece
+        self.execute_path(path_to_place)
 
-    # Move the robot arm to each target position
-    for target_pos in test_positions:
-        print(f"Moving to position: {target_pos}")
-        move_to_position(robot, target_pos)
-        time.sleep(1)  # Pause for a moment to observe the movement
+        # Release the piece
+        gripper_control(self, p, cmd=1)  # Open gripper
+        time.sleep(1/240)
 
-if __name__ == "__main__":
-    # Uncomment the function you want to run
-    # play_chinese_chess()
-    test_motion_planning()
+start_position = [0.22, 0.8, 0]
+urdf_file = "path_to_robot_urdf.urdf"
+obj_indices = [board_id]  # List of pieces on the board
+piece_id_to_char = {board_id: " "}  # Dictionary to identify pieces
+chess_robot = ChineseChessRobot(start_position, obj_indices, piece_id_to_char, urdf_file=urdf_file)
 
-# Updating the `adjust_lift_height` method and incorporating it into motion planning
-def adjust_lift_height(self, deltaY: float) -> None:
-    """
-    Extend arm (prismatic joint) by deltaY units.
-    """
-    lift_id = self.get_joint_index("joint_lift")
-    lift_state = p.getJointState(self.robot_id, lift_id)
-    lift_pos = lift_state[0]
-    target_lift_pos = lift_pos + deltaY
-    p.setJointMotorControl2(
-        bodyIndex=self.robot_id,
-        jointIndex=lift_id,
-        controlMode=p.POSITION_CONTROL,
-        targetPosition=target_lift_pos
-    )
-
-# Integrating motion planning with `make_move` function
-def make_move(self, start_pos, target_pos):
-    assert self.board_image is not None
-    assert self.board_seg_mask is not None
-    
-    # Adjust the lift height to prepare for grasping
-    self.adjust_lift_height(0.1)
-    
-    # Use motion planning to move and grasp the piece
-    move_and_grasp(self, start_pos, target_pos)
-    
-    # Lower the lift after completing the move
-    self.adjust_lift_height(-0.1)
+# Move a piece from (0, 0) to (0, 1)
+piece_to_move = chess_robot.board_id  # Example piece ID
+start_pos = BOARD_COORDS[(0, 0)]
+end_pos = BOARD_COORDS[(0, 1)]
+chess_robot.pick_and_place(piece_to_move, start_pos, end_pos)
