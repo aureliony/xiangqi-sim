@@ -28,9 +28,8 @@ def get_global_action_from_local(robot, delta_forward):
     
     return delta_x, delta_y
 
-def base_control(robot, p, forward=0, turn=0):
+def base_control(robot, p, forward=0):
     x_forward, y_forward = get_global_action_from_local(robot.robot_id, forward)
-    p.setJointMotorControl2(robot.robot_id,3,p.VELOCITY_CONTROL,targetVelocity=turn,force=1000)
     p.setJointMotorControl2(robot.robot_id,1,p.VELOCITY_CONTROL,targetVelocity=x_forward,force=1000)
     p.setJointMotorControl2(robot.robot_id,2,p.VELOCITY_CONTROL,targetVelocity=y_forward,force=1000)
 
@@ -47,6 +46,7 @@ def arm_control(robot, p, up=0, stretch=0, roll=0, yaw=0):
     # rotate
     p.setJointMotorControl2(robot.robot_id,14,p.VELOCITY_CONTROL,targetVelocity=roll,force=1000)
     p.setJointMotorControl2(robot.robot_id,16,p.VELOCITY_CONTROL,targetVelocity=yaw,force=1000)
+
 
 
 def gripper_control(mobot, p, cmd=0):
@@ -298,3 +298,50 @@ class Robot:
 
     def get_position(self):
         return pybullet.getBasePositionAndOrientation(self.robot_id)[0]
+    
+    def get_robot_base_pose(self, robot_id):
+        """
+        Gets the base pose of the robot.
+
+        Args:
+            p: The PyBullet instance.
+            robot_id: The ID of the robot in the PyBullet simulation.
+
+        Returns:
+            position: A tuple of (x, y, z) coordinates of the robot's base.
+            orientation: A tuple of quaternion (x, y, z, w) representing the orientation.
+            euler_orientation: A tuple of Euler angles (roll, pitch, yaw) derived from the quaternion.
+        """
+        # Get the base position and orientation as a quaternion
+        position, orientation = pybullet.getBasePositionAndOrientation(robot_id)
+        
+        # Convert quaternion to Euler angles for easier interpretation if needed
+        euler_orientation = pybullet.getEulerFromQuaternion(orientation)
+        
+        return position, orientation, euler_orientation
+    
+
+    def get_robot_ee_pose(self, robot_id):
+        """
+        Get the position and orientation of the end-effector.
+
+        Args:
+            p: PyBullet instance.
+            robot_id: ID of the robot in the simulation.
+            ee_link_index: Index of the end-effector link.
+
+        Returns:
+            position: (x, y, z) position of the end-effector.
+            orientation: Quaternion (x, y, z, w) representing orientation.
+            euler_orientation: Euler angles (roll, pitch, yaw) derived from the quaternion.
+        """
+        # index of the end-effector link
+        ee_link_index = 17
+
+        # Get the world position and orientation of the end-effector link
+        position, orientation = pybullet.getLinkState(robot_id, ee_link_index)[:2]
+        
+        # Convert orientation quaternion to Euler angles
+        euler_orientation = pybullet.getEulerFromQuaternion(orientation)
+        
+        return position, orientation, euler_orientation

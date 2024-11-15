@@ -526,7 +526,6 @@ pybullet.changeVisualShape(mobot.robot_id,1,rgbaColor=[0,1,0,1])
 mobot.update_observations()
 
 forward=0
-turn=0
 speed=10
 up=0
 stretch=0
@@ -537,7 +536,7 @@ yaw=0
 mobot.update_observations()
 
 total_driving_distance = 0
-previous_position, _, _ = mobot.get_position()
+previous_position, _, _ = mobot.get_robot_base_pose(mobot.robot_id)
 current_position = previous_position
 
 constraint = None
@@ -550,22 +549,14 @@ while True:
     speed = 20
     
     for keycode, keystate in pybullet.getKeyboardEvents().items():
-        # moving
+        # moving - only left (robot moving forward) and right (robot moving backward) arrows are used
         if (keycode == pybullet.B3G_RIGHT_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            turn = -1
-        if (keycode == pybullet.B3G_RIGHT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
-            turn = 0
-        if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            turn = 1
-        if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
-            turn = 0
-        if (keycode == pybullet.B3G_UP_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             forward=1
-        if (keycode == pybullet.B3G_UP_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
+        if (keycode == pybullet.B3G_RIGHT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
             forward=0
-        if (keycode == pybullet.B3G_DOWN_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+        if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             forward=-1
-        if (keycode == pybullet.B3G_DOWN_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
+        if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
             forward=0
 
         # lifting
@@ -588,27 +579,6 @@ while True:
         if (keycode == ord('f') and (keystate & pybullet.KEY_WAS_RELEASED)):
             stretch = 0
 
-        # roll -- not needed
-        # if (keycode == ord('r') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-        #     roll = 1
-        # if (keycode == ord('r') and (keystate & pybullet.KEY_WAS_RELEASED)):
-        #     roll = 0
-        # if (keycode == ord('f') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-        #     roll = -1
-        # if (keycode == ord('f') and (keystate & pybullet.KEY_WAS_RELEASED)):
-        #     roll = 0
-
-        # yaw -- not needed
-        # if (keycode == ord('y') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-        #     yaw = 1
-        # if (keycode == ord('y') and (keystate & pybullet.KEY_WAS_RELEASED)):
-        #     yaw = 0
-        # if (keycode == ord('h') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-        #     yaw = -1
-        # if (keycode == ord('h') and (keystate & pybullet.KEY_WAS_RELEASED)):
-        #     yaw = 0
-
-
         # gripper
         # open gripper when 'o' is pressed
         if (keycode == ord('o') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
@@ -621,29 +591,17 @@ while True:
         # if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_RELEASED)):
         #     gripper_open = True
 
-    base_control(mobot, pybullet, forward, turn)
+    base_control(mobot, pybullet, forward)
     arm_control(mobot, pybullet, up, stretch, roll, yaw)
-
-    # if gripper_open:
-    #     gripper_control(mobot, pybullet, cmd=1)
-    #     # constraint = attach(21, mobot.robotId, 18)
-    # elif gripper_open == -1:
-    #     gripper_control(mobot, pybullet, cmd=0)
-    #     # detach(constraint)
-        # constraint = None
 
     mobot.update_observations()
 
-    # current_position, _, _ = mobot.get_position()
-    # total_driving_distance += np.linalg.norm(np.array(current_position) - np.array(previous_position))
-    # previous_position = current_position
-
-
-    rightWheelVelocity = (forward + turn) * speed
-    leftWheelVelocity  = (forward - turn) * speed
-
-    pybullet.setJointMotorControl2(mobot.robot_id,0,pybullet.VELOCITY_CONTROL,targetVelocity=leftWheelVelocity,force=1000)
-    pybullet.setJointMotorControl2(mobot.robot_id,1,pybullet.VELOCITY_CONTROL,targetVelocity=rightWheelVelocity,force=1000)
+    current_position, _, _ = mobot.get_robot_base_pose(mobot.robot_id)
+    total_driving_distance += np.linalg.norm(np.array(current_position) - np.array(previous_position))
+    previous_position = current_position
 
     mobot.update_observations()
     #mobot.make_move()
+
+    ee_position, _, _ = mobot.get_robot_ee_pose(mobot.robot_id)
+    #print("End-effector position: ", ee_position)
