@@ -28,16 +28,16 @@ def initAxis(center, quater):
 root_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),"../")
 
 ################ Plane Environment
-plane_id = pybullet.loadURDF(os.path.join(root_dir,"resource/urdf/plane.urdf"), [0, 0, 0])
-plane_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/texture1.jpg"))
-# plane_id = pybullet.loadURDF("resource/urdf/plane.urdf", [0, 0, 0])
-# plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
+# plane_id = pybullet.loadURDF(os.path.join(root_dir,"resource/urdf/plane.urdf"), [0, 0, 0])
+# plane_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/texture1.jpg"))
+plane_id = pybullet.loadURDF("resource/urdf/plane.urdf", [0, 0, 0])
+plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
 pybullet.changeVisualShape(0, -1, textureUniqueId=plane_texture_id)
 
 
 ################ Table
-urdf_dir = os.path.join(root_dir,"resource/urdf")
-# urdf_dir = "resource/urdf"
+# urdf_dir = os.path.join(root_dir,"resource/urdf")
+urdf_dir = "resource/urdf"
 
 table_position = [0, 0, 0]
 table_scaling = 1.0
@@ -47,8 +47,8 @@ table_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"table.urdf"),\
                                    basePosition=table_position,\
                                    baseOrientation=table_orientation,\
                                    globalScaling=table_scaling)
-table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
-# table_texture_id = pybullet.loadTexture("resource/texture/table.png")
+# table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
+table_texture_id = pybullet.loadTexture("resource/texture/table.png")
 pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
 
 ################ Board
@@ -510,11 +510,11 @@ piece_id_to_fen = defaultdict(lambda: ".", {
 
 
 ################ Robot
-mobot_urdf_file = os.path.join(root_dir,"resource/urdf/robot/robot.urdf")
-# mobot_urdf_file = "resource/urdf/robot/robot.urdf"
+# mobot_urdf_file = os.path.join(root_dir,"resource/urdf/robot/robot.urdf")
+mobot_urdf_file = "resource/urdf/robot/robot.urdf"
 
 obj_indices = [board_id]
-mobot = Robot([0.22,0.8,0], obj_indices, piece_id_to_char, piece_id_to_fen, urdf_file=mobot_urdf_file)
+mobot = Robot([0.22,0.7,0], obj_indices, piece_id_to_char, piece_id_to_fen, urdf_file=mobot_urdf_file)
 
 
 # for j in range(pybullet.getNumJoints(mobot.robotId)):
@@ -548,9 +548,6 @@ grasp_flag = False
 while True:
     time.sleep(1/240)
     speed = 20
-
-    # move out: Z
-    # move in: X
     
     for keycode, keystate in pybullet.getKeyboardEvents().items():
         # moving
@@ -649,4 +646,4 @@ while True:
     pybullet.setJointMotorControl2(mobot.robot_id,1,pybullet.VELOCITY_CONTROL,targetVelocity=rightWheelVelocity,force=1000)
 
     mobot.update_observations()
-    mobot.make_move()
+    #mobot.make_move()

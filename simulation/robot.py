@@ -118,6 +118,11 @@ class Robot:
         self.board = None
         self.i = 0
 
+        # Set friction coefficients for gripper fingers.
+        for i in range(pybullet.getNumJoints(self.robot_id)):
+            pybullet.changeDynamics(self.robot_id, i, lateralFriction=10.0, spinningFriction=1.0, rollingFriction=1.0, frictionAnchor=True)
+
+
         self.engine = Pikafish()
 
     def get_joint_index(self, name: str) -> int:

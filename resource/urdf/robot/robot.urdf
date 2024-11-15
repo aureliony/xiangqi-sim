@@ -343,15 +343,16 @@
     name="joint_lift"
     type="prismatic">
     <origin
-      xyz="-0.037385 0.3666 0"
-      rpy="-1.5708 1.5708 0" />
+      xyz="-0.037385 0.7 0"
+      rpy="-1.5708 1.5708 0" /> <!--orig: "-0.037385 0.3666 0"-->
     <parent
       link="link_mast" />
     <child
       link="link_lift" />
     <axis
       xyz="0 0 1" />
-  <limit effort="100" lower="0.0" upper="1.1" velocity="1.0"/>
+  <limit effort="100" lower="-0.01" upper="0.0" velocity="2.0"/>
+  <!--orig: limit effort="100" lower="0.0" upper="1.1" velocity="1.0"-->
   </joint>
 
   <link
@@ -464,7 +465,7 @@
     <axis
       xyz="0 0 1" />
     <!-- 0.13 = 0.52/4-->
-    <limit effort="100" lower="0.0" upper="0.13" velocity="1.0"/>
+    <limit effort="100" lower="0.0" upper="0.2" velocity="1.0"/>
   </joint>
 
   <link
@@ -521,7 +522,7 @@
     <axis
       xyz="0 0 1" />
     <!-- 0.13 = 0.52/4-->
-    <limit effort="100" lower="0.0" upper="0.13" velocity="1.0"/>
+    <limit effort="100" lower="0.0" upper="0.2" velocity="1.0"/>
   </joint>
 
   <link
@@ -578,7 +579,7 @@
     <axis
       xyz="0 0 1" />
     <!-- 0.13 = 0.52/4-->
-    <limit effort="100" lower="0.0" upper="0.13" velocity="1.0"/>
+    <limit effort="100" lower="0.0" upper="0.2" velocity="1.0"/>
   </joint>
 
   <link
@@ -635,7 +636,7 @@
     <axis
       xyz="0 0 1" />
     <!-- 0.13 = 0.52/4-->
-    <limit effort="100" lower="0.0" upper="0.13" velocity="1.0"/>
+    <limit effort="100" lower="0.0" upper="0.15" velocity="1.0"/>
   </joint>
 
   <link
