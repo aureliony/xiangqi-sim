@@ -342,7 +342,4 @@ class Robot:
         # Get the world position and orientation of the end-effector link
         position, orientation = pybullet.getLinkState(robot_id, ee_link_index)[:2]
         
-        # Convert orientation quaternion to Euler angles
-        euler_orientation = pybullet.getEulerFromQuaternion(orientation)
-        
-        return position, orientation, euler_orientation
+        return position, orientation

@@ -35,10 +35,29 @@ plane_id = pybullet.loadURDF("resource/urdf/plane.urdf", [0, 0, 0])
 plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
 pybullet.changeVisualShape(0, -1, textureUniqueId=plane_texture_id)
 
+urdf_dir = "resource/urdf"
+
+# robot2
+robot_position = [0, 3, 0]
+robot_scaling = 1.0
+robot_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi])
+robot_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"ur5e/ur5e.urdf"),\
+                                   useFixedBase=True,
+                                   basePosition=robot_position,\
+                                   baseOrientation=robot_orientation,\
+                                   globalScaling=1)
+
+robot_gripper_position = [0, 3, 1]
+robot_gripper_scaling = 1.0
+robot_gripper_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi])
+robot_gripper_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"robotiq_2f_85/robotiq_2f_85.urdf"),\
+                                   useFixedBase=True,
+                                   basePosition=robot_gripper_position,\
+                                   baseOrientation=robot_gripper_orientation,\
+                                   globalScaling=1)
+
 
 ################ Table
-# urdf_dir = os.path.join(root_dir,"resource/urdf")
-urdf_dir = "resource/urdf"
 
 table_position = [0, 0, 0]
 table_scaling = 1.0
@@ -517,8 +536,8 @@ mobot_urdf_file = "resource/urdf/robot/robot.urdf"
 obj_indices = [board_id]
 mobot = Robot([0.22,0.7,0], obj_indices, piece_id_to_char, piece_id_to_fen, urdf_file=mobot_urdf_file)
 
-# for j in range(pybullet.getNumJoints(mobot.robotId)):
-#     print(pybullet.getJointInfo(mobot.robotId,j))
+# for j in range(pybullet.getNumJoints(mobot.robot_id)):
+#     print(pybullet.getJointInfo(mobot.robot_id,j))
 
 pybullet.changeVisualShape(mobot.robot_id,0,rgbaColor=[1,0,0,1])
 pybullet.changeVisualShape(mobot.robot_id,1,rgbaColor=[0,1,0,1])
@@ -564,15 +583,15 @@ while True:
         if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
             turn = 0
         if (keycode == pybullet.B3G_UP_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            forward=100
+            forward=1
         if (keycode == pybullet.B3G_UP_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
             forward=0
         if (keycode == pybullet.B3G_DOWN_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            forward=-100
+            forward=-1
         if (keycode == pybullet.B3G_DOWN_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
             forward=0
 
-        # lifting
+        # lifting -- up/down
         if (keycode == ord('u') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             up = 1
         if (keycode == ord('u') and (keystate & pybullet.KEY_WAS_RELEASED)):
@@ -596,13 +615,10 @@ while True:
         # open gripper when 'o' is pressed
         if (keycode == ord('o') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             gripper_control(mobot, pybullet, cmd=1)
-        # if (keycode == ord('o') and (keystate & pybullet.KEY_WAS_RELEASED)):
-        #     gripper_open = False
         # close gripper when 'c' is pressed
         if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
            gripper_control(mobot, pybullet, cmd=0)
-        # if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_RELEASED)):
-        #     gripper_open = True
+
 
     base_control(mobot, pybullet, forward, turn)
     arm_control(mobot, pybullet, up, stretch, roll, yaw)
@@ -613,8 +629,8 @@ while True:
     total_driving_distance += np.linalg.norm(np.array(current_position) - np.array(previous_position))
     previous_position = current_position
 
-    # mobot.update_observations()
-    # mobot.make_move()
+    mobot.update_observations()
+    mobot.make_move()
 
-    ee_position, _, _ = mobot.get_robot_ee_pose(mobot.robot_id)
-    #print("End-effector position: ", ee_position)
+    ee_position, _ = mobot.get_robot_ee_pose(mobot.robot_id)
+    # print("End-effector position: ", ee_position)
