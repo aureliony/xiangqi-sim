@@ -41,7 +41,7 @@
   <!-- original base offset:       xyz="-0.087526 -0.001626 0.081009" -->
 
  <link
-    name="base_link"> <!--index 0-->
+    name="base_link">
     <inertial>
       <origin
         xyz="0 0 0.081009"
@@ -82,7 +82,7 @@
   </link>
 
   <link
-    name="link_right_wheel"> <!--index 1-->
+    name="link_right_wheel">
     <inertial>
       <origin
         xyz="0 0 0.02765"
@@ -137,8 +137,8 @@
     <dynamics damping="21.75" friction="10.48" spring_reference="0" spring_stiffness="0"/>
   </joint>
 
-  <link 
-    name="link_left_wheel"> <!--index 2-->
+  <link
+    name="link_left_wheel">
     <inertial>
       <origin
         xyz="0 0 -0.02765"
@@ -193,7 +193,7 @@
         <dynamics damping="21.75" friction="10.48" spring_reference="0" spring_stiffness="0"/>ing_stiffness="${joint_spring_stiffness}"/>
   </joint>
 
-<link name="caster_link"> <!--index 3-->
+<link name="caster_link">
     <collision>
       <geometry>
         <sphere radius="0.032"/>
@@ -245,7 +245,7 @@
   </joint>
 
 <link
-    name="link_mast"> <!--index 4-->
+    name="link_mast">
     <inertial>
       <origin
         xyz="0.000337 0.722201 0.002652"
@@ -299,7 +299,7 @@
       xyz="0 0 0" />
   </joint>
 <link
-    name="link_lift"> <!--index 5-->
+    name="link_lift">
     <inertial>
       <origin
         xyz="-0.020369 0.03438 0.02236"
@@ -356,7 +356,7 @@
   </joint>
 
   <link
-    name="link_arm_l4"> <!--index 6-->
+    name="link_arm_l4"> 
     <inertial>
       <origin
         xyz="-0.000168 -0.000254 -0.125235"
@@ -412,7 +412,7 @@
 
 
  <link
-    name="link_arm_l3"> <!--index 7-->
+    name="link_arm_l3">
     <inertial>
       <origin
         xyz="-1E-06 -0.000146 -0.11908"
@@ -469,7 +469,7 @@
   </joint>
 
   <link
-    name="link_arm_l2"> <!--index 8-->
+    name="link_arm_l2">
     <inertial>
       <origin
         xyz="0 -7.1E-05 -0.115635"
@@ -526,7 +526,7 @@
   </joint>
 
   <link
-    name="link_arm_l1"> <!--index 9-->
+    name="link_arm_l1">
     <inertial>
       <origin
         xyz="-1E-06 -0.000121 -0.113457"
@@ -583,7 +583,7 @@
   </joint>
 
   <link
-    name="link_arm_l0"> <!--index 10-->
+    name="link_arm_l0">
     <inertial>
       <origin
         xyz="0.033681 -0.000847 -0.031723"
@@ -640,7 +640,7 @@
   </joint>
 
   <link
-    name="link_wrist_yaw"> <!--index 11-->
+    name="link_wrist_yaw">
     <inertial>
       <origin
         xyz="0 -3.9E-05 -0.016495"
@@ -701,7 +701,7 @@
     <limit effort="100" lower="-1.75" upper="4.0" velocity="1.0"/>
   </joint>
  <link
-    name="link_head"> <!--index 12-->
+    name="link_head">
     <inertial>
       <origin
         xyz="0.047462 0.04451 0.016376"
@@ -754,9 +754,8 @@
     <axis
       xyz="0 0 0" />
   </joint>
-
  <link
-    name="link_head_pan"> <!--index 13-->
+    name="link_head_pan">
     <inertial>
       <origin
         xyz="-0.000422 0.013934 -0.0161"
@@ -813,7 +812,7 @@
   </joint>
 
   <link
-    name="link_head_tilt"> <!--index 14-->
+    name="link_head_tilt">
     <inertial>
       <origin
         xyz="0.003907 -0.02418 0.030154"
@@ -884,7 +883,7 @@
   </joint>
 
 
-<link name="couple_gripper_yaw"> <!--index 15-->
+<link name="couple_gripper_yaw">
     <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
@@ -923,7 +922,7 @@
     <limit effort="100" lower="-1.53" upper="0.79" velocity="1.0"/>
   </joint>
 
-<link name="couple_gripper_roll"> <!--index 16-->
+<link name="couple_gripper_roll">
     <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
@@ -960,7 +959,7 @@
       xyz="0 0 0" />
   </joint>
 
-<link name="link_gripper"> <!--index 17-->
+<link name="link_gripper">
     <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
@@ -983,7 +982,7 @@
        </inertial>
  </link>
 
- <link name="left_link_finger"> <!--index 18-->
+ <link name="left_link_finger">
     <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
@@ -1022,7 +1021,7 @@
     <dynamics damping="0.1" friction="0.1"/>
   </joint>
 
- <link name="right_link_finger"> <!--index 19-->
+ <link name="right_link_finger">
     <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
           <geometry>
