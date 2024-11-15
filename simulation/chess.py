@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 
 import numpy as np
-import pybullet
+import pybullet # type: ignore
 
 from simulation.robot import *
 
@@ -11,7 +11,8 @@ pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
 # pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_WIREFRAME, 1) # for debugging
 
-pybullet.setGravity(0, 0, -1.81)
+# pybullet.setGravity(0, 0, -1.81)
+pybullet.setGravity(0, 0, -9.81)
 pybullet.setRealTimeSimulation(1)
 
 
@@ -516,22 +517,26 @@ mobot_urdf_file = "resource/urdf/robot/robot.urdf"
 obj_indices = [board_id]
 mobot = Robot([0.22,0.7,0], obj_indices, piece_id_to_char, piece_id_to_fen, urdf_file=mobot_urdf_file)
 
-
 # for j in range(pybullet.getNumJoints(mobot.robotId)):
 #     print(pybullet.getJointInfo(mobot.robotId,j))
 
 pybullet.changeVisualShape(mobot.robot_id,0,rgbaColor=[1,0,0,1])
 pybullet.changeVisualShape(mobot.robot_id,1,rgbaColor=[0,1,0,1])
 
-mobot.update_observations()
+pybullet.setRealTimeSimulation(1)
+
+for _ in range(30):
+    pybullet.stepSimulation()
 
 forward=0
 speed=10
+turn=0
 up=0
 stretch=0
 gripper_open=0
 roll=0
 yaw=0
+
 
 mobot.update_observations()
 
@@ -551,12 +556,20 @@ while True:
     for keycode, keystate in pybullet.getKeyboardEvents().items():
         # moving - only left (robot moving forward) and right (robot moving backward) arrows are used
         if (keycode == pybullet.B3G_RIGHT_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            forward=1
+            turn = -1
         if (keycode == pybullet.B3G_RIGHT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
-            forward=0
+            turn = 0
         if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
-            forward=-1
+            turn = 1
         if (keycode == pybullet.B3G_LEFT_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
+            turn = 0
+        if (keycode == pybullet.B3G_UP_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+            forward=100
+        if (keycode == pybullet.B3G_UP_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
+            forward=0
+        if (keycode == pybullet.B3G_DOWN_ARROW and (keystate & pybullet.KEY_WAS_TRIGGERED)):
+            forward=-100
+        if (keycode == pybullet.B3G_DOWN_ARROW and (keystate & pybullet.KEY_WAS_RELEASED)):
             forward=0
 
         # lifting
@@ -591,7 +604,7 @@ while True:
         # if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_RELEASED)):
         #     gripper_open = True
 
-    base_control(mobot, pybullet, forward)
+    base_control(mobot, pybullet, forward, turn)
     arm_control(mobot, pybullet, up, stretch, roll, yaw)
 
     mobot.update_observations()
@@ -600,8 +613,8 @@ while True:
     total_driving_distance += np.linalg.norm(np.array(current_position) - np.array(previous_position))
     previous_position = current_position
 
-    mobot.update_observations()
-    #mobot.make_move()
+    # mobot.update_observations()
+    # mobot.make_move()
 
     ee_position, _, _ = mobot.get_robot_ee_pose(mobot.robot_id)
     #print("End-effector position: ", ee_position)

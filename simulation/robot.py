@@ -28,8 +28,9 @@ def get_global_action_from_local(robot, delta_forward):
     
     return delta_x, delta_y
 
-def base_control(robot, p, forward=0):
+def base_control(robot, p, forward=0, turn=0):
     x_forward, y_forward = get_global_action_from_local(robot.robot_id, forward)
+    p.setJointMotorControl2(robot.robot_id,3,p.VELOCITY_CONTROL,targetVelocity=turn,force=1000)
     p.setJointMotorControl2(robot.robot_id,1,p.VELOCITY_CONTROL,targetVelocity=x_forward,force=1000)
     p.setJointMotorControl2(robot.robot_id,2,p.VELOCITY_CONTROL,targetVelocity=y_forward,force=1000)
 
