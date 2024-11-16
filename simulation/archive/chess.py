@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 import pybullet # type: ignore
 
-from simulation.robot import *
+from simulation.archive.robot import *
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
