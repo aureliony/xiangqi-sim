@@ -1,6 +1,13 @@
 <?xml version="0.0" ?>
 <robot name="chesspiece3.urdf">
   <link name="chesspiece3">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+      <mass value="0.01"/>
+      <inertia ixx="0.0001" iyy="0.0001" izz="0.0001" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+
     <visual>
       <origin rpy="1.57 0 0" xyz="0 0 0"/>
       <geometry>
