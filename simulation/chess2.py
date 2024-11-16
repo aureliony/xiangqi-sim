@@ -83,7 +83,8 @@ while True:
         if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             env.gripper.activate()
 
-    env.make_move()
+    print(env.make_move())
+    
     # test pick and place of h2e2
     #env.step(action={'pick': np.array([0.237, -0.206, 0.66]), 'place': np.array([0.065, -0.206, 0.66])})
     #arm_control(env, pybullet, up, stretch)

@@ -14,6 +14,7 @@ from engine.pikafish import Pikafish
 
 BOUNDS = np.float32([[-0.3, 0.3], [-0.8, -0.2], [0, 0.15]])
 PIXEL_SIZE = 0.00267857
+urdf_dir = "resource/urdf"
 
 class Robotiq2F85:
     """Gripper handling for Robotiq 2F85."""
@@ -151,6 +152,7 @@ class PickPlaceEnv():
         
         # Default position of robot arm's end effector. to get out of the camera's view
         self.default_position = [0, 0.4, 0.9]
+        self.chessboard_positions = [ [[0,0,0] for i in range(9)] for j in range(10)]
 
 
     def reset(self, object_list):
@@ -202,12 +204,12 @@ class PickPlaceEnv():
         
         ################ Chess Pieces
 
-        self.piece_id_to_char, self.piece_id_to_fen = initialize_chess_pieces(board_position)
+        self.piece_id_to_char, self.piece_id_to_fen = self.initialize_chess_pieces(board_position)
 
         ################ Robot
         
-        self.robot_id = pybullet.loadURDF("resource/urdf/ur5e/ur5e.urdf", self.position, flags=pybullet.URDF_USE_MATERIAL_COLORS_FROM_MTL)
-        self.ghost_id = pybullet.loadURDF("resource/urdf/ur5e/ur5e.urdf", [self.position[0], self.position[1], self.position[2] - 10])  # For forward kinematics.
+        self.robot_id = pybullet.loadURDF("resource/urdf/ur5e/ur5e.urdf", self.position, globalScaling=1.2, flags=pybullet.URDF_USE_MATERIAL_COLORS_FROM_MTL)
+        self.ghost_id = pybullet.loadURDF("resource/urdf/ur5e/ur5e.urdf", [self.position[0], self.position[1], self.position[2] - 10], globalScaling=1.2)  # For forward kinematics.
         self.joint_ids = [pybullet.getJointInfo(self.robot_id, i) for i in range(pybullet.getNumJoints(self.robot_id))]
         self.joint_ids = [j[0] for j in self.joint_ids if j[2] == pybullet.JOINT_REVOLUTE]
 
@@ -266,16 +268,6 @@ class PickPlaceEnv():
 
         # Set fixed primitive z-heights.
         hover_xyz = np.float32([pick_xyz[0], place_xyz[1], 0.8])
-        # if pick_pos.shape[-1] == 2:
-        #     pick_xyz = np.append(pick_pos, 0.025)
-        # else:
-        #     pick_xyz = pick_pos
-        #     pick_xyz[2] = 0.025
-        # if place_pos.shape[-1] == 2:
-        #     place_xyz = np.append(place_pos, 0.15)
-        # else:
-        #     place_xyz = place_pos
-        #     place_xyz[2] = 0.15
 
         # Move to object.
         ee_xyz = self.get_ee_pos()
@@ -460,199 +452,198 @@ class PickPlaceEnv():
         # print(fen)
         bestmove = asyncio.run(self.engine.get_best_move(fen))
         print("bestmove:", bestmove, flush=True)
+        start_pos = bestmove[:2]
+        end_pos = bestmove[2:]
+        offset = 0.04 # because the robot is size x 1.2
+        start_coords = [self.pos_to_coordinates(start_pos)[0], self.pos_to_coordinates(start_pos)[1], self.pos_to_coordinates(start_pos)[2] - offset]
+        end_coords = [self.pos_to_coordinates(end_pos)[0], self.pos_to_coordinates(end_pos)[1], self.pos_to_coordinates(end_pos)[2] - offset]
+        self.step({'pick': start_coords, 'place': end_coords})
+        return "Move: " + bestmove
     
+    def pos_to_coordinates(self, pos):
+        # pos is a string like "a1"
+        # returns the coordinates in the chessboard_positions matrix
+        # a1 = [0,8]
+        # h10 = [9,0]
+        col = ord(pos[0]) - ord('a')
+        row = 9 - int(pos[1])
+        return self.chessboard_positions[row][col]        
 
-urdf_dir = "resource/urdf"
-
+    def initialize_chess_pieces(self, chessboard_position):
         
-def pos_to_coordinates(pos):
-    # pos is a string like "a1"
-    # returns the coordinates in the chessboard_positions matrix
-    # a1 = [0,8]
-    # h10 = [9,0]
-    col = ord(pos[0]) - ord('a')
-    row = 9 - int(pos[1])
-    return row, col
-
-def coordinates_to_pos(row, col):
-    # row, col are integers
-    # returns the position string
-    # [0,8] = a1
-    # [9,0] = h10
-    return chr(col + ord('a')) + str(9 - row)
-      
-
-
-# all chess pieces initial position
-# chinese chess
-chess_pieces = {    
-    # swap red n black
-    "r1" : "e9", # red king
-    "r2" : "d9", "r3" : "f9", # red advisor
-    "r4" : "c9", "r5" : "g9", # red elephant
-    "r6" : "b9", "r7" : "h9", # red horse
-    "r8" : "a9", "r9" : "i9", # red chariot
-    "r10" : "b7", "r11" : "h7", # red cannon
-    "r12" : "a6", "r13" : "c6", "r14" : "e6", "r15" : "g6", "r16" : "i6", # red soldier
-    "b1" : "e0", # black king
-    "b2" : "d0", "b3" : "f0", # black advisor
-    "b4" : "c0", "b5" : "g0", # black elephant
-    "b6" : "b0", "b7" : "h0", # black horse
-    "b8" : "a0", "b9" : "i0", # black chariot
-    "b10" : "b2", "b11" : "h2", # black cannon
-    "b12" : "a3", "b13" : "c3", "b14" : "e3", "b15" : "g3", "b16" : "i3" # black soldier
-}
-
-def initialize_chess_pieces(chessboard_position):
-    
-    # Dynamically create variables and store their IDs in a dictionary
-    piece_id_map = {}
-    
-    gap = 0.086 # chess spacing apart
-    chess_bottom_left_corner = [chessboard_position[0]- 5 * gap - 0.015, chessboard_position[1] - 4 * gap + 0.016, chessboard_position[2] + 0.066]
-    chessboard_positions = [ [[0,0,0] for i in range(9)] for j in range(10)]
-    for row in range(10):
-        for col in range(9):
-            chessboard_positions[row][col] = [
-                chess_bottom_left_corner[0] + col * gap,  # X position
-                chess_bottom_left_corner[1] + (9 - row) * gap,  # Y position (invert rows for bottom-left start)
-                chess_bottom_left_corner[2]  # Z position (same for all)
-            ]
+        # all chess pieces initial position
+        # chinese chess
+        chess_pieces = {    
+            # swap red n black
+            "r1" : "e9", # red king
+            "r2" : "d9", "r3" : "f9", # red advisor
+            "r4" : "c9", "r5" : "g9", # red elephant
+            "r6" : "b9", "r7" : "h9", # red horse
+            "r8" : "a9", "r9" : "i9", # red chariot
+            "r10" : "b7", "r11" : "h7", # red cannon
+            "r12" : "a6", "r13" : "c6", "r14" : "e6", "r15" : "g6", "r16" : "i6", # red soldier
+            "b1" : "e0", # black king
+            "b2" : "d0", "b3" : "f0", # black advisor
+            "b4" : "c0", "b5" : "g0", # black elephant
+            "b6" : "b0", "b7" : "h0", # black horse
+            "b8" : "a0", "b9" : "i0", # black chariot
+            "b10" : "b2", "b11" : "h2", # black cannon
+            "b12" : "a3", "b13" : "c3", "b14" : "e3", "b15" : "g3", "b16" : "i3" # black soldier
+        }
+        # Dynamically create variables and store their IDs in a dictionary
+        piece_id_map = {}
+        
+        gap = 0.086 # chess spacing apart
+        chess_bottom_left_corner = [chessboard_position[0]- 5 * gap - 0.015, chessboard_position[1] - 4 * gap + 0.016, chessboard_position[2] + 0.066]
+        for row in range(10):
+            for col in range(9):
+                self.chessboard_positions[row][col] = [
+                    chess_bottom_left_corner[0] + col * gap,  # X position
+                    chess_bottom_left_corner[1] + (9 - row) * gap,  # Y position (invert rows for bottom-left start)
+                    chess_bottom_left_corner[2]  # Z position (same for all)
+                ]
+                
+        # ################ FOR DEBUGGING
+        # for i in range(10):
+        #     print(chessboard_positions[i])
             
-    # ################ FOR DEBUGGING
-    # for i in range(10):
-    #     print(chessboard_positions[i])
-        
-    # # pretty print the chessboard with using coordinates_to_pos
-    # for i in range(10):
-    #     print([coordinates_to_pos(i,j) for j in range(9)])
+        # # pretty print the chessboard with using coordinates_to_pos
+        # for i in range(10):
+        #     print([coordinates_to_pos(i,j) for j in range(9)])
 
-    # ################ CHESS PIECES
-    
+        # ################ CHESS PIECES
+        
+                
+        PIECE_MASS = 0.01
+        cp_scaling = 0.20 # chess piece scaling
+        obj_friction_ceof = 4000.0
+        b_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2]) # black pieces orientation
+        r_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]) # red pieces orientation
+
+
+        # Red pieces
+        red = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "r16"]
+        for r in red:
+            id_name = f"{r}_id"
+            position_name = f"{r}_position"
+            globals()[position_name] = self.pos_to_coordinates(chess_pieces[r])
+            globals()[id_name] = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+r+"/model.urdf"),
+                                            useFixedBase=False,
+                                            globalScaling=cp_scaling,
+                                            basePosition=[globals()[position_name][0], globals()[position_name][1], globals()[position_name][2] + 0.04],
+                                            baseOrientation=r_orientation)
+            pybullet.changeVisualShape(globals()[id_name], -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
+            pybullet.changeDynamics(globals()[id_name], -1, lateralFriction=obj_friction_ceof)
+            pybullet.changeDynamics(globals()[id_name], -1, mass=PIECE_MASS)
+            # Store IDs in a dictionary for easier access
+            piece_id_map[r] = globals()[id_name]
             
-    PIECE_MASS = 0.01
-    cp_scaling = 0.20 # chess piece scaling
-    obj_friction_ceof = 4000.0
-    b_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2]) # black pieces orientation
-    r_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]) # red pieces orientation
-
-    # Black pieces
-    black = ["b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15", "b16"]
-    
-    
-    for b in black:
-        id_name = f"{b}_id"
-        position_name = f"{b}_position"
-        coords = pos_to_coordinates(chess_pieces[b])
-        globals()[position_name] = chessboard_positions[coords[0]][coords[1]]
-        globals()[id_name] = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+b+"/model.urdf"),
-                                        useFixedBase=False,
-                                        globalScaling=cp_scaling,
-                                        basePosition=[globals()[position_name][0], globals()[position_name][1], globals()[position_name][2] + 0.04],
-                                        baseOrientation=b_orientation)
-        pybullet.changeVisualShape(globals()[id_name], -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-        pybullet.changeDynamics(globals()[id_name], -1, lateralFriction=obj_friction_ceof)
-        pybullet.changeDynamics(globals()[id_name], -1, mass=PIECE_MASS)
-        # Store IDs in a dictionary for easier access
-        piece_id_map[b] = globals()[id_name]
-    
-    # Red pieces
-    red = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "r16"]
-    for r in red:
-        id_name = f"{r}_id"
-        position_name = f"{r}_position"
-        coords = pos_to_coordinates(chess_pieces[r])
-        globals()[position_name] = chessboard_positions[coords[0]][coords[1]]
-        globals()[id_name] = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+r+"/model.urdf"),
-                                        useFixedBase=False,
-                                        globalScaling=cp_scaling,
-                                        basePosition=[globals()[position_name][0], globals()[position_name][1], globals()[position_name][2] + 0.04],
-                                        baseOrientation=r_orientation)
-        pybullet.changeVisualShape(globals()[id_name], -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-        pybullet.changeDynamics(globals()[id_name], -1, lateralFriction=obj_friction_ceof)
-        pybullet.changeDynamics(globals()[id_name], -1, mass=PIECE_MASS)
-        # Store IDs in a dictionary for easier access
-        piece_id_map[r] = globals()[id_name]
+        # Black pieces
+        black = ["b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15", "b16"]
         
-    
-    print("Chess pieces initialized")
-    
-    piece_id_to_char = defaultdict(lambda: "  ", {
-        # board_id: "  ",
-
-        piece_id_map["b1"]:  "将",
-        piece_id_map["b2"]:  "士",
-        piece_id_map["b3"]:  "士",
-        piece_id_map["b4"]:  "象",
-        piece_id_map["b5"]:  "象",
-        piece_id_map["b6"]:  "馬",
-        piece_id_map["b7"]:  "馬",
-        piece_id_map["b8"]:  "車",
-        piece_id_map["b9"]:  "車",
-        piece_id_map["b10"]: "砲",
-        piece_id_map["b11"]: "砲",
-        piece_id_map["b12"]: "卒",
-        piece_id_map["b13"]: "卒",
-        piece_id_map["b14"]: "卒",
-        piece_id_map["b15"]: "卒",
-        piece_id_map["b16"]: "卒",
-
-        piece_id_map["r1"]:  "帥",
-        piece_id_map["r2"]:  "仕",
-        piece_id_map["r3"]:  "仕",
-        piece_id_map["r4"]:  "相",
-        piece_id_map["r5"]:  "相",
-        piece_id_map["r6"]:  "傌",
-        piece_id_map["r7"]:  "傌",
-        piece_id_map["r8"]:  "俥",
-        piece_id_map["r9"]:  "俥",
-        piece_id_map["r10"]: "炮",
-        piece_id_map["r11"]: "炮",
-        piece_id_map["r12"]: "兵",
-        piece_id_map["r13"]: "兵",
-        piece_id_map["r14"]: "兵",
-        piece_id_map["r15"]: "兵",
-        piece_id_map["r16"]: "兵",
-    })
-
-    piece_id_to_fen = defaultdict(lambda: ".", {
-        # board_id: "  ",
         
-        piece_id_map["b1"]:  "k",
-        piece_id_map["b2"]:  "a",
-        piece_id_map["b3"]:  "a",
-        piece_id_map["b4"]:  "b",
-        piece_id_map["b5"]:  "b",
-        piece_id_map["b6"]:  "n",
-        piece_id_map["b7"]:  "n",
-        piece_id_map["b8"]:  "r",
-        piece_id_map["b9"]:  "r",
-        piece_id_map["b10"]: "c",
-        piece_id_map["b11"]: "c",
-        piece_id_map["b12"]: "p",
-        piece_id_map["b13"]: "p",
-        piece_id_map["b14"]: "p",
-        piece_id_map["b15"]: "p",
-        piece_id_map["b16"]: "p",
+        for b in black:
+            id_name = f"{b}_id"
+            position_name = f"{b}_position"
+            globals()[position_name] = self.pos_to_coordinates(chess_pieces[b])
+            globals()[id_name] = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+b+"/model.urdf"),
+                                            useFixedBase=False,
+                                            globalScaling=cp_scaling,
+                                            basePosition=[globals()[position_name][0], globals()[position_name][1], globals()[position_name][2] + 0.04],
+                                            baseOrientation=b_orientation)
+            pybullet.changeVisualShape(globals()[id_name], -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
+            pybullet.changeDynamics(globals()[id_name], -1, lateralFriction=obj_friction_ceof)
+            pybullet.changeDynamics(globals()[id_name], -1, mass=PIECE_MASS)
+            # Store IDs in a dictionary for easier access
+            piece_id_map[b] = globals()[id_name]
         
-        piece_id_map["r1"]:  "K",
-        piece_id_map["r2"]:  "A",
-        piece_id_map["r3"]:  "A",
-        piece_id_map["r4"]:  "B",
-        piece_id_map["r5"]:  "B",
-        piece_id_map["r6"]:  "N",
-        piece_id_map["r7"]:  "N",
-        piece_id_map["r8"]:  "R",
-        piece_id_map["r9"]:  "R",
-        piece_id_map["r10"]: "C",
-        piece_id_map["r11"]: "C",
-        piece_id_map["r12"]: "P",
-        piece_id_map["r13"]: "P",
-        piece_id_map["r14"]: "P",
-        piece_id_map["r15"]: "P",
-        piece_id_map["r16"]: "P",        
-    })
+        
+            
+        
+        print("Chess pieces initialized")
+        
+        piece_id_to_char = defaultdict(lambda: "  ", {
+            # board_id: "  ",
+
+            piece_id_map["b1"]:  "将",
+            piece_id_map["b2"]:  "士",
+            piece_id_map["b3"]:  "士",
+            piece_id_map["b4"]:  "象",
+            piece_id_map["b5"]:  "象",
+            piece_id_map["b6"]:  "馬",
+            piece_id_map["b7"]:  "馬",
+            piece_id_map["b8"]:  "車",
+            piece_id_map["b9"]:  "車",
+            piece_id_map["b10"]: "砲",
+            piece_id_map["b11"]: "砲",
+            piece_id_map["b12"]: "卒",
+            piece_id_map["b13"]: "卒",
+            piece_id_map["b14"]: "卒",
+            piece_id_map["b15"]: "卒",
+            piece_id_map["b16"]: "卒",
+
+            piece_id_map["r1"]:  "帥",
+            piece_id_map["r2"]:  "仕",
+            piece_id_map["r3"]:  "仕",
+            piece_id_map["r4"]:  "相",
+            piece_id_map["r5"]:  "相",
+            piece_id_map["r6"]:  "傌",
+            piece_id_map["r7"]:  "傌",
+            piece_id_map["r8"]:  "俥",
+            piece_id_map["r9"]:  "俥",
+            piece_id_map["r10"]: "炮",
+            piece_id_map["r11"]: "炮",
+            piece_id_map["r12"]: "兵",
+            piece_id_map["r13"]: "兵",
+            piece_id_map["r14"]: "兵",
+            piece_id_map["r15"]: "兵",
+            piece_id_map["r16"]: "兵",
+        })
+
+        piece_id_to_fen = defaultdict(lambda: ".", {
+            # board_id: "  ",
+            
+            piece_id_map["b1"]:  "k",
+            piece_id_map["b2"]:  "a",
+            piece_id_map["b3"]:  "a",
+            piece_id_map["b4"]:  "b",
+            piece_id_map["b5"]:  "b",
+            piece_id_map["b6"]:  "n",
+            piece_id_map["b7"]:  "n",
+            piece_id_map["b8"]:  "r",
+            piece_id_map["b9"]:  "r",
+            piece_id_map["b10"]: "c",
+            piece_id_map["b11"]: "c",
+            piece_id_map["b12"]: "p",
+            piece_id_map["b13"]: "p",
+            piece_id_map["b14"]: "p",
+            piece_id_map["b15"]: "p",
+            piece_id_map["b16"]: "p",
+            
+            piece_id_map["r1"]:  "K",
+            piece_id_map["r2"]:  "A",
+            piece_id_map["r3"]:  "A",
+            piece_id_map["r4"]:  "B",
+            piece_id_map["r5"]:  "B",
+            piece_id_map["r6"]:  "N",
+            piece_id_map["r7"]:  "N",
+            piece_id_map["r8"]:  "R",
+            piece_id_map["r9"]:  "R",
+            piece_id_map["r10"]: "C",
+            piece_id_map["r11"]: "C",
+            piece_id_map["r12"]: "P",
+            piece_id_map["r13"]: "P",
+            piece_id_map["r14"]: "P",
+            piece_id_map["r15"]: "P",
+            piece_id_map["r16"]: "P",        
+        })
+        
+        return piece_id_to_char, piece_id_to_fen
     
-    return piece_id_to_char, piece_id_to_fen
+
+
+
+        
+
     
 
