@@ -70,6 +70,7 @@ pybullet.setRealTimeSimulation(1)
 for _ in range(30):
     pybullet.stepSimulation()
     
+#is_our_turn = True
 while True:
     time.sleep(1/240)
     speed = 20
@@ -84,6 +85,7 @@ while True:
             env.gripper.activate()
 
     print(env.make_move())
+    # is_our_turn = not is_our_turn # like this? idk
     
     # test pick and place of h2e2
     #env.step(action={'pick': np.array([0.237, -0.206, 0.66]), 'place': np.array([0.065, -0.206, 0.66])})

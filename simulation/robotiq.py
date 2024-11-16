@@ -466,7 +466,7 @@ class PickPlaceEnv():
         # a1 = [0,8]
         # h10 = [9,0]
         col = ord(pos[0]) - ord('a')
-        row = 9 - int(pos[1])
+        row = int(pos[1])
         return self.chessboard_positions[row][col]        
 
     def initialize_chess_pieces(self, chessboard_position):
@@ -474,21 +474,22 @@ class PickPlaceEnv():
         # all chess pieces initial position
         # chinese chess
         chess_pieces = {    
-            # swap red n black
-            "r1" : "e9", # red king
-            "r2" : "d9", "r3" : "f9", # red advisor
-            "r4" : "c9", "r5" : "g9", # red elephant
-            "r6" : "b9", "r7" : "h9", # red horse
-            "r8" : "a9", "r9" : "i9", # red chariot
-            "r10" : "b7", "r11" : "h7", # red cannon
-            "r12" : "a6", "r13" : "c6", "r14" : "e6", "r15" : "g6", "r16" : "i6", # red soldier
-            "b1" : "e0", # black king
-            "b2" : "d0", "b3" : "f0", # black advisor
-            "b4" : "c0", "b5" : "g0", # black elephant
-            "b6" : "b0", "b7" : "h0", # black horse
-            "b8" : "a0", "b9" : "i0", # black chariot
-            "b10" : "b2", "b11" : "h2", # black cannon
-            "b12" : "a3", "b13" : "c3", "b14" : "e3", "b15" : "g3", "b16" : "i3" # black soldier
+            "b1" : "e9", # black king
+            "b2" : "d9", "b3" : "f9", # black advisor
+            "b4" : "c9", "b5" : "g9", # black elephant
+            "b6" : "b9", "b7" : "h9", # black horse
+            "b8" : "a9", "b9" : "i9", # black chariot
+            "b10" : "b7", "b11" : "h7", # black cannon
+            "b12" : "a6", "b13" : "c6", "b14" : "e6", "b15" : "g6", "b16" : "i6", # black soldier
+            "r1" : "e0", # red king
+            "r2" : "d0", "r3" : "f0", # red advisor
+            "r4" : "c0", "r5" : "g0", # red elephant
+            "r6" : "b0", "r7" : "h0", # red horse
+            "r8" : "a0", "r9" : "i0", # red chariot
+            "r10" : "b2", "r11" : "h2", # red cannon
+            "r12" : "a3", "r13" : "c3", "r14" : "e3", "r15" : "g3", "r16" : "i3" # red soldier
+            
+            
         }
         # Dynamically create variables and store their IDs in a dictionary
         piece_id_map = {}
