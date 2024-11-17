@@ -1,13 +1,7 @@
-import asyncio
-import os
-import cv2
-import numpy as np
-import pybullet # type: ignore
-import pybullet_data # type: ignore
 import time
-import threading
-import cv2
-from collections import defaultdict
+
+import numpy as np
+import pybullet  # type: ignore
 
 from simulation.robotiq import *
 

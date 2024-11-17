@@ -1,14 +1,13 @@
 import asyncio
 import os
+import threading
+import time
+from collections import defaultdict
+
 import cv2
 import numpy as np
 import pybullet
 import pybullet_data
-import time
-import threading
-import cv2
-from collections import defaultdict
-
 
 from engine.pikafish import Pikafish
 
@@ -324,11 +323,11 @@ class PickPlaceEnv():
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
-        observation = self.update_observations() # get_observation()
-        reward = self.get_reward()
-        done = False
-        info = {}
-        return observation, reward, done, info
+        # observation = self.update_observations() # get_observation()
+        # reward = self.get_reward()
+        # done = False
+        # info = {}
+        # return observation, reward, done, info
 
     def step_sim_and_render(self):
         pybullet.stepSimulation()
@@ -336,8 +335,8 @@ class PickPlaceEnv():
 
         interval = 40 if self.high_frame_rate else 60
 
-    def get_reward(self):
-        return None
+    # def get_reward(self):
+    #     return None
 
     def update_observations(self) -> None:
         # For simplicity, let's fix the camera position to directly above the board
@@ -443,6 +442,8 @@ class PickPlaceEnv():
     def make_move(self, is_our_turn=True):
         if not is_our_turn:
             return
+
+        self.update_observations()
 
         # if self.i == 0:
         #     self.print_board()
@@ -647,4 +648,3 @@ class PickPlaceEnv():
         
 
     
-
