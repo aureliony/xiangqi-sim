@@ -1,11 +1,9 @@
 import time
 
 import numpy as np
-import pybullet  # type: ignore
+import pybullet
 
-from simulation.robotiq import *
-
-#from engine.pikafish import Pikafish
+from simulation.robotiq import PickPlaceEnv
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
@@ -40,9 +38,6 @@ def initAxis(center, quater):
                             lineWidth=10)
 
 
-
-
-
 forward=0
 speed=10
 turn=0
@@ -50,7 +45,7 @@ up=0
 stretch=0
 
 env = PickPlaceEnv(render=True, high_res=False, high_frame_rate=False)
-env.reset([])
+env.reset()
 
 def arm_control(env, pybullet, up, stretch):
     joints = pybullet.getJointStates(env.robot_id, env.joint_ids)
@@ -59,12 +54,8 @@ def arm_control(env, pybullet, up, stretch):
     joints[1] += stretch * 0.01
     env.servoj(joints)
 
-pybullet.setRealTimeSimulation(1)
 
-for _ in range(30):
-    pybullet.stepSimulation()
-    
-#is_our_turn = True
+is_our_turn = True
 while True:
     time.sleep(1/240)
     speed = 20
@@ -78,9 +69,9 @@ while True:
         if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             env.gripper.activate()
 
-    print(env.make_move())
-    # is_our_turn = not is_our_turn # like this? idk
-    
+    print(env.make_move(is_our_turn=is_our_turn))
+    is_our_turn = not is_our_turn
+
     # test pick and place of h2e2
     #env.step(action={'pick': np.array([0.237, -0.206, 0.66]), 'place': np.array([0.065, -0.206, 0.66])})
     #arm_control(env, pybullet, up, stretch)

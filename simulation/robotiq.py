@@ -114,14 +114,7 @@ class PickPlaceEnv():
 
     def __init__(self, render=False, high_res=False, high_frame_rate=False):
         self.dt = 1/480
-        self.sim_step = 0
 
-        # Configure and start PyBullet.
-        # python3 -m pybullet_utils.runServer
-        # pybullet.connect(pybullet.SHARED_MEMORY)  # pybullet.GUI for local GUI.
-        pybullet.connect(pybullet.DIRECT)  # pybullet.GUI for local GUI.
-        pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
-        pybullet.setPhysicsEngineParameter(enableFileCaching=0)
         assets_path = os.path.dirname(os.path.abspath(""))
         pybullet.setAdditionalSearchPath(assets_path)
         pybullet.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -151,23 +144,14 @@ class PickPlaceEnv():
         
         # Default position of robot arm's end effector. to get out of the camera's view
         self.default_position = [0, 0.4, 0.9]
-        self.chessboard_positions = [ [[0,0,0] for i in range(9)] for j in range(10)]
+        self.chessboard_positions = [[0.0, 0.0, 0.0] * 9 for _ in range(10)]
 
 
-    def reset(self, object_list):
-        pybullet.resetSimulation(pybullet.RESET_USE_DEFORMABLE_WORLD)
-        pybullet.setGravity(0, 0, -9.8)
+    def reset(self):
         self.cache_video = []
 
-        # Temporarily disable rendering to load URDFs faster.
-        # pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, 0)
-        pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, 1) # nah
-        
-
         urdf_dir = "resource/urdf"
-        # Add robot.
-        #pybullet.loadURDF("resource/urdf/plane.urdf", [0, 0, -0.001])
-        
+
         ################ Plane
 
         plane_id = pybullet.loadURDF(os.path.join(urdf_dir,"/plane.urdf"), [0, 0, 0])
@@ -200,10 +184,6 @@ class PickPlaceEnv():
                                         globalScaling=board_scaling)
         self.board_id = board_id
         pybullet.changeVisualShape(board_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-        
-        ################ Chess Pieces
-
-        self.piece_id_to_char, self.piece_id_to_fen = self.initialize_chess_pieces(board_position)
 
         ################ Robot
         
@@ -223,12 +203,12 @@ class PickPlaceEnv():
         self.gripper = Robotiq2F85(self.robot_id, self.ee_link_id, self.position)
         self.gripper.release()
 
-        for _ in range(200):
-            pybullet.stepSimulation()
-
         # # record object positions at reset
         # self.init_pos = {name: self.get_obj_pos(name) for name in object_list}
-        
+
+        ################ Chess Pieces
+        self.piece_id_to_char, self.piece_id_to_fen = self.initialize_chess_pieces(board_position)
+
         # Go back to default position.
         ee_xyz = self.get_ee_pos()
         while np.linalg.norm(self.default_position - ee_xyz) > 0.01:
@@ -236,7 +216,7 @@ class PickPlaceEnv():
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
-        return self.update_observations() #get_observation()
+        # return self.update_observations() #get_observation()
 
     def servoj(self, joints):
         """Move to target joint positions with position control."""
@@ -331,9 +311,6 @@ class PickPlaceEnv():
 
     def step_sim_and_render(self):
         pybullet.stepSimulation()
-        self.sim_step += 1
-
-        interval = 40 if self.high_frame_rate else 60
 
     # def get_reward(self):
     #     return None
@@ -341,7 +318,7 @@ class PickPlaceEnv():
     def update_observations(self) -> None:
         # For simplicity, let's fix the camera position to directly above the board
         camera_view_matrix = pybullet.computeViewMatrix(
-            cameraEyePosition=[0, 0.1, 1.8],
+            cameraEyePosition=[0, -0.1, 1.8],
             cameraTargetPosition=[0.0, 0.0, 0.0],
             cameraUpVector=[0.0, 0.0, 1.0]
         )
@@ -406,7 +383,7 @@ class PickPlaceEnv():
             print('|' + row + '|')
             print('-' * 28)
         print()
-        
+
     def board_to_fen(self, board, turn):
         assert board.shape == (10, 9)
         # Initialize the FEN string
@@ -438,11 +415,8 @@ class PickPlaceEnv():
         fen_turn = "w" if turn else "b"
         fen += f" {fen_turn} - - 0 1" # TODO: implement halfmoves and fullmoves
         return fen
-    
-    def make_move(self, is_our_turn=True):
-        if not is_our_turn:
-            return
 
+    def make_move(self, is_our_turn=True):
         self.update_observations()
 
         # if self.i == 0:
@@ -453,11 +427,16 @@ class PickPlaceEnv():
         # print(fen)
         bestmove = asyncio.run(self.engine.get_best_move(fen))
         print("bestmove:", bestmove, flush=True)
+
+        # get xyz coordinates of targets
         start_pos = bestmove[:2]
         end_pos = bestmove[2:]
-        offset = 0.04 # because the robot is size x 1.2
-        start_coords = [self.pos_to_coordinates(start_pos)[0], self.pos_to_coordinates(start_pos)[1], self.pos_to_coordinates(start_pos)[2] - offset]
-        end_coords = [self.pos_to_coordinates(end_pos)[0], self.pos_to_coordinates(end_pos)[1], self.pos_to_coordinates(end_pos)[2] - offset]
+        start_coords = self.pos_to_coordinates(start_pos)
+        end_coords = self.pos_to_coordinates(end_pos)
+
+        offset = 0.045 # because the robot is size x 1.2
+        start_coords[2] -= offset
+        end_coords[2] -= offset
         self.step({'pick': start_coords, 'place': end_coords})
         return "Move: " + bestmove
     
@@ -468,10 +447,10 @@ class PickPlaceEnv():
         # h10 = [9,0]
         col = ord(pos[0]) - ord('a')
         row = int(pos[1])
-        return self.chessboard_positions[row][col]        
+        # print(f"row: {row}, col: {col}")
+        return self.chessboard_positions[row][col]
 
     def initialize_chess_pieces(self, chessboard_position):
-        
         # all chess pieces initial position
         # chinese chess
         chess_pieces = {    
@@ -482,6 +461,7 @@ class PickPlaceEnv():
             "b8" : "a9", "b9" : "i9", # black chariot
             "b10" : "b7", "b11" : "h7", # black cannon
             "b12" : "a6", "b13" : "c6", "b14" : "e6", "b15" : "g6", "b16" : "i6", # black soldier
+
             "r1" : "e0", # red king
             "r2" : "d0", "r3" : "f0", # red advisor
             "r4" : "c0", "r5" : "g0", # red elephant
@@ -489,79 +469,70 @@ class PickPlaceEnv():
             "r8" : "a0", "r9" : "i0", # red chariot
             "r10" : "b2", "r11" : "h2", # red cannon
             "r12" : "a3", "r13" : "c3", "r14" : "e3", "r15" : "g3", "r16" : "i3" # red soldier
-            
-            
         }
         # Dynamically create variables and store their IDs in a dictionary
         piece_id_map = {}
-        
+
         gap = 0.086 # chess spacing apart
         chess_bottom_left_corner = [chessboard_position[0]- 5 * gap - 0.015, chessboard_position[1] - 4 * gap + 0.016, chessboard_position[2] + 0.066]
         for row in range(10):
             for col in range(9):
                 self.chessboard_positions[row][col] = [
                     chess_bottom_left_corner[0] + col * gap,  # X position
-                    chess_bottom_left_corner[1] + (9 - row) * gap,  # Y position (invert rows for bottom-left start)
+                    chess_bottom_left_corner[1] + row * gap,  # Y position (invert rows for bottom-left start)
                     chess_bottom_left_corner[2]  # Z position (same for all)
                 ]
-                
+
         # ################ FOR DEBUGGING
         # for i in range(10):
-        #     print(chessboard_positions[i])
-            
-        # # pretty print the chessboard with using coordinates_to_pos
-        # for i in range(10):
-        #     print([coordinates_to_pos(i,j) for j in range(9)])
+        #     for j in range(9):
+        #         t = tuple(round(x, 2) for x in self.chessboard_positions[i][j])
+        #         print(t, end = ' ')
+        #     print()
 
+        # # pretty print the chessboard with using coordinates_to_pos
+        # # for i in range(10):
+        # #     print([self.coordinates_to_pos(i,j) for j in range(9)])
+
+        # exit()
         # ################ CHESS PIECES
-        
-                
-        PIECE_MASS = 0.01
+
+        PIECE_MASS = 0.1
         cp_scaling = 0.20 # chess piece scaling
         obj_friction_ceof = 4000.0
-        b_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2]) # black pieces orientation
-        r_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]) # red pieces orientation
-
+        b_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]) # black pieces orientation
+        r_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2]) # red pieces orientation
 
         # Red pieces
         red = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "r16"]
         for r in red:
-            id_name = f"{r}_id"
-            position_name = f"{r}_position"
-            globals()[position_name] = self.pos_to_coordinates(chess_pieces[r])
-            globals()[id_name] = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+r+"/model.urdf"),
+            base_position = self.pos_to_coordinates(chess_pieces[r])
+            piece_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+r+"/model.urdf"),
                                             useFixedBase=False,
                                             globalScaling=cp_scaling,
-                                            basePosition=[globals()[position_name][0], globals()[position_name][1], globals()[position_name][2] + 0.04],
+                                            basePosition=base_position,
                                             baseOrientation=r_orientation)
-            pybullet.changeVisualShape(globals()[id_name], -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-            pybullet.changeDynamics(globals()[id_name], -1, lateralFriction=obj_friction_ceof)
-            pybullet.changeDynamics(globals()[id_name], -1, mass=PIECE_MASS)
+            pybullet.changeVisualShape(piece_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
+            pybullet.changeDynamics(piece_id, -1, lateralFriction=obj_friction_ceof)
+            pybullet.changeDynamics(piece_id, -1, mass=PIECE_MASS)
             # Store IDs in a dictionary for easier access
-            piece_id_map[r] = globals()[id_name]
-            
+            piece_id_map[r] = piece_id
+
         # Black pieces
         black = ["b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15", "b16"]
-        
-        
         for b in black:
-            id_name = f"{b}_id"
-            position_name = f"{b}_position"
-            globals()[position_name] = self.pos_to_coordinates(chess_pieces[b])
-            globals()[id_name] = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+b+"/model.urdf"),
+            piece_position = self.pos_to_coordinates(chess_pieces[b])
+            piece_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+b+"/model.urdf"),
                                             useFixedBase=False,
                                             globalScaling=cp_scaling,
-                                            basePosition=[globals()[position_name][0], globals()[position_name][1], globals()[position_name][2] + 0.04],
+                                            basePosition=piece_position,
                                             baseOrientation=b_orientation)
-            pybullet.changeVisualShape(globals()[id_name], -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-            pybullet.changeDynamics(globals()[id_name], -1, lateralFriction=obj_friction_ceof)
-            pybullet.changeDynamics(globals()[id_name], -1, mass=PIECE_MASS)
+            pybullet.changeVisualShape(piece_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
+            pybullet.changeDynamics(piece_id, -1, lateralFriction=obj_friction_ceof)
+            pybullet.changeDynamics(piece_id, -1, mass=PIECE_MASS)
             # Store IDs in a dictionary for easier access
-            piece_id_map[b] = globals()[id_name]
-        
-        
-            
-        
+            piece_id_map[b] = piece_id
+
         print("Chess pieces initialized")
         
         piece_id_to_char = defaultdict(lambda: "  ", {
@@ -641,10 +612,3 @@ class PickPlaceEnv():
         })
         
         return piece_id_to_char, piece_id_to_fen
-    
-
-
-
-        
-
-    
