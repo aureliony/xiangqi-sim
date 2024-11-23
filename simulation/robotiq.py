@@ -251,12 +251,13 @@ class PickPlaceEnv():
         pick_xyz, place_xyz = action['pick'].copy(), action['place'].copy()
 
         # Set fixed primitive z-heights.
-        hover_xyz = np.float32([pick_xyz[0], place_xyz[1], 0.8])
+        hover_pick_xyz = np.float32([pick_xyz[0], pick_xyz[1], 0.8])
+        hover_place_xyz = np.float32([place_xyz[0], place_xyz[1], 0.8])        
 
         # Move to object.
         ee_xyz = self.get_ee_pos()
-        while np.linalg.norm(hover_xyz - ee_xyz) > 0.01:
-            self.movep(hover_xyz)
+        while np.linalg.norm(hover_pick_xyz - ee_xyz) > 0.01:
+            self.movep(hover_pick_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
@@ -269,14 +270,20 @@ class PickPlaceEnv():
         self.gripper.activate()
         for _ in range(240):
             self.step_sim_and_render()
-        while np.linalg.norm(hover_xyz - ee_xyz) > 0.01:
-            self.movep(hover_xyz)
+        while np.linalg.norm(hover_pick_xyz - ee_xyz) > 0.01:
+            self.movep(hover_pick_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
         for _ in range(50):
             self.step_sim_and_render()
 
+        # Move to hover over place location.
+        while np.linalg.norm(hover_place_xyz - ee_xyz) > 0.01:
+            self.movep(hover_place_xyz)
+            self.step_sim_and_render()
+            ee_xyz = self.get_ee_pos()
+            
         # Move to place location.
         while np.linalg.norm(place_xyz - ee_xyz) > 0.01:
             self.movep(place_xyz)
