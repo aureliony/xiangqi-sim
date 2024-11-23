@@ -144,8 +144,7 @@ class PickPlaceEnv():
         
         # Default position of robot arm's end effector. to get out of the camera's view
         self.default_position = [0, 0.4, 0.9]
-        self.chessboard_positions = [[0.0, 0.0, 0.0] * 9 for _ in range(10)]
-
+        self.board_positions = [[0.0, 0.0, 0.0] * 9 for _ in range(10)]
 
     def reset(self):
         self.cache_video = []
@@ -229,13 +228,19 @@ class PickPlaceEnv():
 
     def movep(self, position):
         """Move to target end effector position."""
-        joints = pybullet.calculateInverseKinematics(
-            bodyUniqueId=self.robot_id,
-            endEffectorLinkIndex=self.tip_link_id,
-            targetPosition=position,
-            targetOrientation=pybullet.getQuaternionFromEuler(self.home_ee_euler),
-            maxNumIterations=100)
-        self.servoj(joints)
+        current_position = self.get_ee_pos()
+        steps = 50  # Increase steps for smoother and slower movement
+        for i in range(steps + 1):
+            interpolated_position = current_position + (position - current_position) * (i / steps)
+            joints = pybullet.calculateInverseKinematics(
+                bodyUniqueId=self.robot_id,
+                endEffectorLinkIndex=self.tip_link_id,
+                targetPosition=interpolated_position,
+                targetOrientation=pybullet.getQuaternionFromEuler(self.home_ee_euler),
+                maxNumIterations=100
+            )
+            self.servoj(joints)
+            self.step_sim_and_render()
 
     def get_ee_pos(self):
         ee_xyz = np.float32(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
@@ -431,26 +436,34 @@ class PickPlaceEnv():
         # get xyz coordinates of targets
         start_pos = bestmove[:2]
         end_pos = bestmove[2:]
-        start_coords = self.pos_to_coordinates(start_pos)
+
+        # print(f"row: {row}, col: {col}")
+        # return self.chessboard_positions[row][col]
+
+        r0, c0 = self.pos_to_idx(start_pos)
+        start_id = self.board[9-r0, c0]
+        start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
         end_coords = self.pos_to_coordinates(end_pos)
 
-        offset = 0.045 # because the robot is size x 1.2
-        start_coords[2] -= offset
-        end_coords[2] -= offset
+        start_coords[2] -= 0.0454
+        end_coords[2] -= 0.037
         self.step({'pick': start_coords, 'place': end_coords})
         return "Move: " + bestmove
-    
+
+    def pos_to_idx(self, pos):
+        col = ord(pos[0]) - ord('a')
+        row = int(pos[1])
+        return row, col
+
     def pos_to_coordinates(self, pos):
         # pos is a string like "a1"
         # returns the coordinates in the chessboard_positions matrix
         # a1 = [0,8]
         # h10 = [9,0]
-        col = ord(pos[0]) - ord('a')
-        row = int(pos[1])
-        # print(f"row: {row}, col: {col}")
-        return self.chessboard_positions[row][col]
+        row, col = self.pos_to_idx(pos)
+        return self.board_positions[row][col]
 
-    def initialize_chess_pieces(self, chessboard_position):
+    def initialize_chess_pieces(self, board_center_pos):
         # all chess pieces initial position
         # chinese chess
         chess_pieces = {    
@@ -474,14 +487,18 @@ class PickPlaceEnv():
         piece_id_map = {}
 
         gap = 0.086 # chess spacing apart
-        chess_bottom_left_corner = [chessboard_position[0]- 5 * gap - 0.015, chessboard_position[1] - 4 * gap + 0.016, chessboard_position[2] + 0.066]
+        chess_bottom_left_corner = [board_center_pos[0]- 5 * gap - 0.015, board_center_pos[1] - 4 * gap + 0.016, board_center_pos[2] + 0.066]
         for row in range(10):
             for col in range(9):
-                self.chessboard_positions[row][col] = [
+                self.board_positions[row][col] = [
                     chess_bottom_left_corner[0] + col * gap,  # X position
                     chess_bottom_left_corner[1] + row * gap,  # Y position (invert rows for bottom-left start)
                     chess_bottom_left_corner[2]  # Z position (same for all)
                 ]
+
+        
+        # print(f"row: {row}, col: {col}")
+        # return self.chessboard_positions[row][col]
 
         # ################ FOR DEBUGGING
         # for i in range(10):
