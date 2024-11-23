@@ -229,7 +229,7 @@ class PickPlaceEnv():
     def movep(self, position):
         """Move to target end effector position."""
         current_position = self.get_ee_pos()
-        steps = 50  # Increase steps for smoother and slower movement
+        steps = 90  # Increase steps for smoother and slower movement
         for i in range(steps + 1):
             interpolated_position = current_position + (position - current_position) * (i / steps)
             joints = pybullet.calculateInverseKinematics(
@@ -445,7 +445,7 @@ class PickPlaceEnv():
         start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
         end_coords = self.pos_to_coordinates(end_pos)
 
-        start_coords[2] -= 0.0454
+        start_coords[2] -= 0.0452
         end_coords[2] -= 0.037
         self.step({'pick': start_coords, 'place': end_coords})
         return "Move: " + bestmove
@@ -514,7 +514,7 @@ class PickPlaceEnv():
         # exit()
         # ################ CHESS PIECES
 
-        PIECE_MASS = 0.1
+        PIECE_MASS = 0.01
         cp_scaling = 0.20 # chess piece scaling
         obj_friction_ceof = 4000.0
         b_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]) # black pieces orientation
