@@ -167,7 +167,7 @@ def pick_and_place(env, start_coords, end_coords):
     # piece_height = aabb_max[2] - aabb_min[2]  # Height along the Z-axis
     # print(f"Chess piece height: {piece_height} meters")
     piece_height = 0.0454 # from blend * 0.2 scaled
-    safe_height = 0.06  # Increased safe height to avoid collision with table or pieces
+    safe_height = 1.2  # Increased safe height to avoid collision with table or pieces
     fine_tune_height = 0.1  # Increased fine-tune height for better clearance
 
     # Step 1: Move to the start position and grasp the chess piece
