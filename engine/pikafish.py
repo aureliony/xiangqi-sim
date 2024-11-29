@@ -35,7 +35,7 @@ class Pikafish:
         return output
 
 
-    async def get_best_move(self, fen: str = None, depth: int = 15):
+    async def get_best_move(self, fen: str = None, depth: int = 15) -> str:
         """
         go depth 1 -> "bestmove m"
         position startpos moves m1 m2...

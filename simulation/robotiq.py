@@ -250,9 +250,13 @@ class PickPlaceEnv():
 
     def movep(self, position):
         """Move to target end effector position."""
+        position = np.array(position)
         current_position = self.get_ee_pos()
-        steps = 30  # Increase steps for smoother and slower movement
-        for i in range(steps + 1):
+        dist = np.sqrt(np.sum((current_position - position) ** 2.0))
+        # print(f"Distance to travel: {dist:.2f}")
+        steps = max(1, round(dist * 100.0))  # Increase steps for smoother and slower movement
+        # print(f"Steps: {steps}")
+        for i in range(1, steps + 1):
             interpolated_position = current_position + (position - current_position) * (i / steps)
             joints = pybullet.calculateInverseKinematics(
                 bodyUniqueId=self.robot_id,
@@ -265,7 +269,7 @@ class PickPlaceEnv():
             self.step_sim_and_render()
 
     def get_ee_pos(self):
-        ee_xyz = np.float32(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
+        ee_xyz = np.array(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
         return ee_xyz
 
     def step(self, action=None):
@@ -472,6 +476,10 @@ class PickPlaceEnv():
         # print(fen)
         bestmove = asyncio.run(self.engine.get_best_move(fen))
         print("bestmove:", bestmove, flush=True)
+        if bestmove == '(none)':
+            # Game over
+            print("Game over!")
+            return
 
         # get xyz coordinates of targets
         start_pos = bestmove[:2]
