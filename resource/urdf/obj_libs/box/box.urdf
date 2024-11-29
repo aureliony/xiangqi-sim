@@ -1,6 +1,6 @@
 <?xml version="0.0" ?>
-<robot name="chessboard.urdf">
-  <link name="chessboard">
+<robot name="box.urdf">
+  <link name="box">
 
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0.0"/>
@@ -11,15 +11,16 @@
     <visual>
       <origin rpy="1.57 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="chessboard2.obj"/>
+        <mesh filename="box.obj"/>
       </geometry>
     </visual>
     
     <collision>
       <origin rpy="1.57 0 0" xyz="0 0 0.0"/>
       <geometry>
-  	    <mesh filename="chessboard2.obj"/>
+  	    <mesh filename="box.obj"/>
       </geometry>
     </collision>
   </link>
+
 </robot>
