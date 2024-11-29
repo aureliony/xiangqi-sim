@@ -54,7 +54,6 @@ def arm_control(env, pybullet, up, stretch):
     joints[1] += stretch * 0.01
     env.servoj(joints)
 
-
 is_our_turn = True
 while True:
     time.sleep(1/240)

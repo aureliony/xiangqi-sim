@@ -57,12 +57,12 @@ class Robotiq2F85:
             
     # Close gripper fingers.
     def activate(self):
-        pybullet.setJointMotorControl2(self.body, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=1, force=10)
+        pybullet.setJointMotorControl2(self.body, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=0.5, force=10)
         self.activated = True
 
     # Open gripper fingers.
     def release(self):
-        pybullet.setJointMotorControl2(self.body, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-1, force=10)
+        pybullet.setJointMotorControl2(self.body, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-0.5, force=10)
         self.activated = False
 
     # If activated and object in gripper: check object contact.
@@ -170,6 +170,19 @@ class PickPlaceEnv():
         # table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
         table_texture_id = pybullet.loadTexture("resource/texture/table.png")
         pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
+        
+        ################ Box
+
+        box_position = [0.25, 0.62, 0.67]
+        box_scaling = 0.08
+        box_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi/2])
+        box_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/box/box.urdf"),\
+                                        useFixedBase=True,
+                                        basePosition=box_position,\
+                                        baseOrientation=box_orientation,\
+                                        globalScaling=box_scaling)
+        # change colour to light brown
+        pybullet.changeVisualShape(box_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
 
         ################ Board
         
@@ -214,6 +227,15 @@ class PickPlaceEnv():
             self.movep(self.default_position)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
+            
+        # Add collision filter to avoid gripper-board interaction
+        pybullet.setCollisionFilterPair(
+            self.gripper.body,  # Gripper ID
+            board_id,           # board ID
+            linkIndexA=-1,      # Entire gripper
+            linkIndexB=-1,      # Entire table
+            enableCollision=False
+        )
 
         # return self.update_observations() #get_observation()
 
@@ -229,7 +251,7 @@ class PickPlaceEnv():
     def movep(self, position):
         """Move to target end effector position."""
         current_position = self.get_ee_pos()
-        steps = 90  # Increase steps for smoother and slower movement
+        steps = 30  # Increase steps for smoother and slower movement
         for i in range(steps + 1):
             interpolated_position = current_position + (position - current_position) * (i / steps)
             joints = pybullet.calculateInverseKinematics(
@@ -291,11 +313,11 @@ class PickPlaceEnv():
             ee_xyz = self.get_ee_pos()
 
         # Place down object.
-        while (not self.gripper.detect_contact()) and (place_xyz[2] > 0.66):
-            place_xyz[2] -= 0.001
-            self.movep(place_xyz)
-            for _ in range(3):
-                self.step_sim_and_render()
+        # while (not self.gripper.detect_contact()) and (place_xyz[2] > 0.68):
+        #     place_xyz[2] -= 0.001
+        #     self.movep(place_xyz)
+        #     for _ in range(3):
+        #         self.step_sim_and_render()
         self.gripper.release()
         for _ in range(240):
             self.step_sim_and_render()
@@ -376,6 +398,17 @@ class PickPlaceEnv():
         board = transformed_board[np.ix_(y_coords, x_coords)]
         self.board = board.astype(int)
         
+    def get_piece_at_position(self, position):
+        # Get the ID of the piece at a specific chessboard position.
+        # returns The segmentation mask ID of the piece, or None if empty.
+        row, col = self.pos_to_idx(position)
+        piece_id = self.board[9 - row, col]
+
+        if piece_id == self.board_id or piece_id == 0:
+            return None  # No piece at this position
+
+        return piece_id  # Return the piece ID
+    
     def get_board_coordinates(self, indices: np.ndarray):
         rect = np.zeros((4, 2), dtype=np.float32)
         s = indices.sum(axis=1)
@@ -447,8 +480,24 @@ class PickPlaceEnv():
         # print(f"row: {row}, col: {col}")
         # return self.chessboard_positions[row][col]
 
+        
+        # check if there is a piece at the location
+        if self.get_piece_at_position(end_pos) is not None:
+            print(self.get_piece_at_position(end_pos))
+            # put the piece out of the board
+            start_pos = end_pos
+            r0, c0 = self.pos_to_idx(start_pos)
+            start_id = self.board[9-r0, c0]
+            start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
+            end_coords = [0.25, 0.62, 0.8]
+            start_coords[2] -= 0.0452
+            self.step({'pick': start_coords, 'place': end_coords})
+            start_pos = bestmove[:2]
+            end_pos = bestmove[2:]
+            
         r0, c0 = self.pos_to_idx(start_pos)
         start_id = self.board[9-r0, c0]
+            
         start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
         end_coords = self.pos_to_coordinates(end_pos)
 
@@ -468,7 +517,7 @@ class PickPlaceEnv():
         # a1 = [0,8]
         # h10 = [9,0]
         row, col = self.pos_to_idx(pos)
-        return self.board_positions[row][col]
+        return self.board_positions[row][col].copy()
 
     def initialize_chess_pieces(self, board_center_pos):
         # all chess pieces initial position
@@ -502,28 +551,12 @@ class PickPlaceEnv():
                     chess_bottom_left_corner[1] + row * gap,  # Y position (invert rows for bottom-left start)
                     chess_bottom_left_corner[2]  # Z position (same for all)
                 ]
-
-        
-        # print(f"row: {row}, col: {col}")
-        # return self.chessboard_positions[row][col]
-
-        # ################ FOR DEBUGGING
-        # for i in range(10):
-        #     for j in range(9):
-        #         t = tuple(round(x, 2) for x in self.chessboard_positions[i][j])
-        #         print(t, end = ' ')
-        #     print()
-
-        # # pretty print the chessboard with using coordinates_to_pos
-        # # for i in range(10):
-        # #     print([self.coordinates_to_pos(i,j) for j in range(9)])
-
-        # exit()
+                
         # ################ CHESS PIECES
 
         PIECE_MASS = 0.01
         cp_scaling = 0.20 # chess piece scaling
-        obj_friction_ceof = 4000.0
+        obj_friction_ceof = 1.0
         b_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]) # black pieces orientation
         r_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2]) # red pieces orientation
 
