@@ -253,9 +253,8 @@ class PickPlaceEnv():
         position = np.array(position)
         current_position = self.get_ee_pos()
         dist = np.sqrt(np.sum((current_position - position) ** 2.0))
-        # print(f"Distance to travel: {dist:.2f}")
-        steps = max(1, round(dist * 100.0))  # Increase steps for smoother and slower movement
-        # print(f"Steps: {steps}")
+        steps = max(1, round(dist * 64.0))  # Increase steps for smoother and slower movement
+        # print(f"Dist: {dist:.3f}, Steps: {steps}")
         for i in range(1, steps + 1):
             interpolated_position = current_position + (position - current_position) * (i / steps)
             joints = pybullet.calculateInverseKinematics(
