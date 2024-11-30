@@ -284,12 +284,14 @@ class SimulationEnv:
 
         self.move_and_step(hover_start_xyz)
         self.move_and_step(start_xyz)
+        time.sleep(0.5)
         self.gripper.activate()
         for _ in range(240):
             self.step_sim_and_render()
         self.move_and_step(hover_start_xyz)
         self.move_and_step(hover_end_xyz)
         self.move_and_step(end_xyz)
+        time.sleep(0.5)
         self.gripper.release()
         for _ in range(240):
             self.step_sim_and_render()
