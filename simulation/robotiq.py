@@ -3,8 +3,10 @@ import os
 import threading
 import time
 from collections import defaultdict
-
+from PIL import Image
+import matplotlib.pyplot as plt
 import cv2
+import matplotlib
 import numpy as np
 import pybullet
 import pybullet_data
@@ -284,14 +286,14 @@ class SimulationEnv:
 
         self.move_and_step(hover_start_xyz)
         self.move_and_step(start_xyz)
-        time.sleep(0.5)
+        time.sleep(0.2)
         self.gripper.activate()
         for _ in range(240):
             self.step_sim_and_render()
         self.move_and_step(hover_start_xyz)
         self.move_and_step(hover_end_xyz)
         self.move_and_step(end_xyz)
-        time.sleep(0.5)
+        time.sleep(0.2)
         self.gripper.release()
         for _ in range(240):
             self.step_sim_and_render()
@@ -341,6 +343,7 @@ class SimulationEnv:
 
         width, height, rgbPixels, depthPixels, segmentationMaskBuffer = cameraImage
 
+        # plt.imsave('11.png', segmentationMaskBuffer)
         segmentationMaskBuffer = np.rot90(segmentationMaskBuffer, axes=(1, 0))
         indices = np.argwhere(segmentationMaskBuffer == self.board_id)
         src_board_coords = self.get_board_coordinates(indices)
@@ -358,15 +361,33 @@ class SimulationEnv:
             dst_size,
             flags=cv2.INTER_NEAREST # Keep all pixels integers
         )
+        # plt.imsave('22.png', transformed_board)
 
-        # plt.imsave('transformed_board.png', transformed_board)
-        # self.board_seg_mask = transformed_board
         x_vals = np.linspace(width*5/320, width*314/320, num=10)
         y_vals = np.linspace(height*7/320, height*312/320, num=11)
         x_coords = (x_vals[:-1] + x_vals[1:]) / 2
         y_coords = (y_vals[:-1] + y_vals[1:]) / 2
         x_coords = x_coords.round().astype(int)
         y_coords = y_coords.round().astype(int)
+
+        # plt.imsave('33.png', transformed_board)
+
+        # maxi = transformed_board.max() + 1
+        # WHITE = (maxi, maxi, maxi)
+        # for x in x_vals:
+        #     x = round(x)
+        #     cv2.line(transformed_board, (x, 0), (x, height), WHITE, 1)
+        # for y in y_vals:
+        #     y = round(y)
+        #     cv2.line(transformed_board, (0, y), (width, y), WHITE, 1)
+        # for x in x_coords:
+        #     x = round(x)
+        #     for y in y_coords:
+        #         y = round(y)
+        #         cv2.circle(transformed_board, (x,y), radius=0, color=WHITE, thickness=-1)
+        # plt.imsave('44.png', transformed_board)
+        # exit()
+
         board = transformed_board[np.ix_(y_coords, x_coords)]
         self.board = board.astype(int)
         
