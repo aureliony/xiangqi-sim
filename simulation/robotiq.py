@@ -360,9 +360,12 @@ class PickPlaceEnv():
         #     cameraUpVector=[0.0, 0.0, 1.0]
         # )
         camera_position = np.array(pybullet.getLinkState(self.gripper.body_id, self.gripper.camera_id)[4])
+        target_position = camera_position.copy()
+        target_position[0] += 0.00001 # Look directly below
+        target_position[2] -= 0.1 # Look directly below
         camera_view_matrix = pybullet.computeViewMatrix(
             cameraEyePosition=camera_position,
-            cameraTargetPosition=[0.0, 0.0, 0.0],
+            cameraTargetPosition=target_position, # [0, 0, 0]
             cameraUpVector=[0.0, 0.0, 1.0]
         )
 
@@ -376,6 +379,7 @@ class PickPlaceEnv():
             projectionMatrix=camera_proj_matrix,
             renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
         )
+
         if fast:
             return
 
