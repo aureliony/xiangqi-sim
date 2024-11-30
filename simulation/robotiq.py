@@ -43,10 +43,11 @@ class Robotiq2F85:
 
         self.camera_id = 2
 
-
-    # Control joint positions by enforcing hard contraints on gripper behavior.
-    # Set one joint as the open/close motor joint (other joints should mimic).
     def step(self):
+        """
+        Control joint positions by enforcing hard contraints on gripper behavior.
+        Set one joint as the open/close motor joint (other joints should mimic).
+        """
         while True:
             try:
                 currj = [pybullet.getJointState(self.body_id, i)[0] for i in range(self.n_joints)]
@@ -57,20 +58,22 @@ class Robotiq2F85:
                 return
             time.sleep(0.001)
 
-    # Close gripper fingers.
     def activate(self):
+        """Close gripper fingers"""
         pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=0.5, force=10)
         self.activated = True
 
-    # Open gripper fingers.
     def release(self):
+        """Open gripper fingers"""
         pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-0.5, force=10)
         self.activated = False
 
-    # If activated and object in gripper: check object contact.
-    # If activated and nothing in gripper: check gripper contact.
-    # If released: check proximity to surface (disabled).
     def detect_contact(self):
+        """
+        If activated and object in gripper: check object contact.
+        If activated and nothing in gripper: check gripper contact.
+        If released: check proximity to surface (disabled).
+        """
         obj, _, ray_frac = self.check_proximity()
         if self.activated:
             empty = self.grasp_width() < 0.01
@@ -78,11 +81,9 @@ class Robotiq2F85:
             if obj == self.body_id or obj == 0:
                 return False
             return self.external_contact(cbody)
-    #   else:
-    #     return ray_frac < 0.14 or self.external_contact()
 
-    # Return if body is in contact with something other than gripper
     def external_contact(self, body=None):
+        """Returns true if body is in contact with something other than gripper"""
         if body is None:
             body = self.body_id
         pts = pybullet.getContactPoints(bodyA=body)
@@ -218,13 +219,9 @@ class SimulationEnv:
         ################ Chess Pieces
         self.piece_id_to_char, self.piece_id_to_fen = self.initialize_chess_pieces(board_position)
 
-        # Go back to default position.
-        ee_xyz = self.get_ee_pos()
-        while np.linalg.norm(self.default_position - ee_xyz) > 0.01:
-            self.movep(self.default_position)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
-            
+        # Go back to default position
+        self.move_and_step(self.default_position)
+
         # Add collision filter to avoid gripper-board interaction
         pybullet.setCollisionFilterPair(
             self.gripper.body_id,  # Gripper ID
@@ -247,7 +244,6 @@ class SimulationEnv:
         positionGains=[0.01]*6)
 
     def movep(self, position, multiplier=64.0):
-        """Move to target end effector position."""
         position = np.array(position)
         current_position = self.get_ee_pos()
         dist = np.sqrt(np.sum((current_position - position) ** 2.0))
@@ -266,72 +262,39 @@ class SimulationEnv:
             self.step_sim_and_render()
 
     def get_ee_pos(self):
-        ee_xyz = np.array(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
-        return ee_xyz
+        return np.array(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
+
+    def move_and_step(self, goal, target_delta = 0.01):
+        ee_xyz = self.get_ee_pos()
+        while np.linalg.norm(goal - ee_xyz) > target_delta:
+            self.movep(goal)
+            self.step_sim_and_render()
+            ee_xyz = self.get_ee_pos()
 
     def move_object(self, start_xyz, end_xyz):
         start_xyz = np.array(start_xyz)
         end_xyz = np.array(end_xyz)
 
         # Compute hover xyz, which is slightly above the source and target coords
-        hover_height = 0.05
+        hover_height = 0.1
         hover_start_xyz = start_xyz.copy()
         hover_end_xyz = end_xyz.copy()
         hover_start_xyz[2] += hover_height
         hover_end_xyz[2] += hover_height
 
-        # Move gripper to start
-        target_delta = 0.01
-        ee_xyz = self.get_ee_pos()
-        while np.linalg.norm(hover_start_xyz - ee_xyz) > target_delta:
-            self.movep(hover_start_xyz)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
-
-        while np.linalg.norm(start_xyz - ee_xyz) > target_delta:
-            self.movep(start_xyz)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
-
-        # Gripper picks up object
+        self.move_and_step(hover_start_xyz)
+        self.move_and_step(start_xyz)
         self.gripper.activate()
         for _ in range(240):
             self.step_sim_and_render()
-        while np.linalg.norm(hover_start_xyz - ee_xyz) > target_delta:
-            self.movep(hover_start_xyz)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
-
-        for _ in range(50):
-            self.step_sim_and_render()
-
-        # Move to hover end
-        while np.linalg.norm(hover_end_xyz - ee_xyz) > target_delta:
-            self.movep(hover_end_xyz)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
-            
-        # Move to end
-        while np.linalg.norm(end_xyz - ee_xyz) > target_delta:
-            self.movep(end_xyz)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
-
+        self.move_and_step(hover_start_xyz)
+        self.move_and_step(hover_end_xyz)
+        self.move_and_step(end_xyz)
         self.gripper.release()
         for _ in range(240):
             self.step_sim_and_render()
-
-        # Move to hover end
-        while np.linalg.norm(hover_end_xyz - ee_xyz) > target_delta:
-            self.movep(hover_end_xyz)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
-
-        # Go back to default position
-        while np.linalg.norm(self.default_position - ee_xyz) > 0.01:
-            self.movep(self.default_position)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
+        self.move_and_step(hover_end_xyz)
+        self.move_and_step(self.default_position)
 
     def step_sim_and_render(self):
         pybullet.stepSimulation()
