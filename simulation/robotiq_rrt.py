@@ -60,7 +60,7 @@ class SimulationEnvRRT(SimulationEnv):
         def rrt(
             goal_pos,
             max_iterations = 50000,
-            step_size = 0.05
+            step_size = 0.07
         ):
             ee_pos = np.array(self.get_ee_pos())
             tree: list[Node] = [Node(ee_pos)]
@@ -99,7 +99,7 @@ class SimulationEnvRRT(SimulationEnv):
 
             # Execute the path
             for waypoint in path:
-                self.movep(waypoint, 1000.0)
+                self.movep(waypoint)
                 for _ in range(5):
                     self.step_sim_and_render()
 
