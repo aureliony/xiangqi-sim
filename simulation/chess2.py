@@ -44,7 +44,7 @@ turn=0
 up=0
 stretch=0
 
-env = SimulationEnv(render=True, high_res=False, high_frame_rate=False)
+env = SimulationEnv()
 env.reset()
 
 def arm_control(env, pybullet, up, stretch):

@@ -490,7 +490,7 @@ class SimulationEnv:
         end_pos = bestmove[2:]
 
         # print(f"row: {row}, col: {col}")
-        # return self.chessboard_positions[row][col]
+        # return self.board_positions[row][col]
 
         # check if there is a piece at the location
         if self.get_piece_at_position(end_pos) is not None:
@@ -524,7 +524,7 @@ class SimulationEnv:
 
     def pos_to_coordinates(self, pos):
         # pos is a string like "a1"
-        # returns the coordinates in the chessboard_positions matrix
+        # returns the coordinates in the board_positions matrix
         # a1 = [0,8]
         # h10 = [9,0]
         row, col = self.pos_to_idx(pos)
