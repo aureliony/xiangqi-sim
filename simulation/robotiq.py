@@ -131,7 +131,8 @@ class SimulationEnv:
 
         self.table_position = [0, 0, 0]
         self.robot_position = [0.0, 0.57, 0.6]
-        self.box_position = [0.0, -0.53, 0.67]
+        self.box_position = [0.0, -0.52, 0.67]
+        self.box_drop_position = [0.0, -0.45, 0.8]
         self.board_position = [0.09, -0.05, 0.6]
 
         image_aspect_ratio = 1.0
@@ -296,14 +297,14 @@ class SimulationEnv:
 
         self.move_and_step(hover_start_xyz)
         self.move_and_step(start_xyz)
-        time.sleep(0.2)
+        # time.sleep(0.2)
         self.gripper.activate()
         for _ in range(240):
             self.step_sim_and_update_obs()
         self.move_and_step(hover_start_xyz)
         self.move_and_step(hover_end_xyz)
         self.move_and_step(end_xyz)
-        time.sleep(0.2)
+        # time.sleep(0.2)
         self.gripper.release()
         for _ in range(240):
             self.step_sim_and_update_obs()
@@ -496,7 +497,7 @@ class SimulationEnv:
             start_id = self.board[9-r0, c0]
             start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
             start_coords[2] -= piece_grip_depth
-            self.move_object(start_coords, self.box_position)
+            self.move_object(start_coords, self.box_drop_position)
 
         r0, c0 = self.pos_to_idx(start_pos)
         start_id = self.board[9-r0, c0]
@@ -559,7 +560,7 @@ class SimulationEnv:
 
         PIECE_MASS = 0.01
         cp_scaling = 0.20 # chess piece scaling
-        obj_friction_ceof = 1.0
+        obj_friction_ceof = 100.0
         b_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]) # black pieces orientation
         r_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2]) # red pieces orientation
 
