@@ -345,7 +345,7 @@ class PickPlaceEnv():
     def step_sim_and_render(self):
         pybullet.stepSimulation()
         self.update_counter = getattr(self, 'update_counter', 0) + 1
-        if self.update_counter % 30 == 0:
+        if self.update_counter % 16 == 0:
             self.update_observations(fast=True)
             self.update_counter = 0
 
@@ -359,7 +359,7 @@ class PickPlaceEnv():
         #     cameraTargetPosition=[0.0, 0.0, 0.0],
         #     cameraUpVector=[0.0, 0.0, 1.0]
         # )
-        camera_position = pybullet.getLinkState(self.gripper.body_id, self.gripper.camera_id)[4]
+        camera_position = np.array(pybullet.getLinkState(self.gripper.body_id, self.gripper.camera_id)[4])
         camera_view_matrix = pybullet.computeViewMatrix(
             cameraEyePosition=camera_position,
             cameraTargetPosition=[0.0, 0.0, 0.0],
@@ -500,7 +500,7 @@ class PickPlaceEnv():
         
         # check if there is a piece at the location
         if self.get_piece_at_position(end_pos) is not None:
-            print(self.get_piece_at_position(end_pos))
+            # print(self.get_piece_at_position(end_pos))
             # put the piece out of the board
             start_pos = end_pos
             r0, c0 = self.pos_to_idx(start_pos)

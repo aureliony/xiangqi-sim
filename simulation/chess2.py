@@ -68,7 +68,7 @@ while True:
         if (keycode == ord('c') and (keystate & pybullet.KEY_WAS_TRIGGERED)):
             env.gripper.activate()
 
-    print(env.make_move(is_our_turn=is_our_turn))
+    env.make_move(is_our_turn=is_our_turn)
     is_our_turn = not is_our_turn
 
     # test pick and place of h2e2
