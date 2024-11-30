@@ -273,13 +273,16 @@ class PickPlaceEnv():
         ee_xyz = np.array(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
         return ee_xyz
 
-    def step(self, action=None):
-        """Do pick and place motion primitive."""
-        pick_xyz, place_xyz = action['pick'].copy(), action['place'].copy()
+    def step(self, start_xyz, end_xyz):
+        start_xyz = np.array(start_xyz)
+        end_xyz = np.array(end_xyz)
 
-        # Set fixed primitive z-heights.
-        hover_pick_xyz = np.float32([pick_xyz[0], pick_xyz[1], 0.8])
-        hover_place_xyz = np.float32([place_xyz[0], place_xyz[1], 0.8])        
+        # Compute hover xyz, which is slightly above the source and target coords
+        hover_z_height = 0.05
+        hover_pick_xyz = start_xyz.copy()
+        hover_place_xyz = end_xyz.copy()
+        hover_pick_xyz[2] += hover_z_height
+        hover_place_xyz[2] += hover_z_height
 
         # Move to object.
         ee_xyz = self.get_ee_pos()
@@ -288,8 +291,8 @@ class PickPlaceEnv():
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
-        while np.linalg.norm(pick_xyz - ee_xyz) > 0.01:
-            self.movep(pick_xyz)
+        while np.linalg.norm(start_xyz - ee_xyz) > 0.01:
+            self.movep(start_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
@@ -312,8 +315,8 @@ class PickPlaceEnv():
             ee_xyz = self.get_ee_pos()
             
         # Move to place location.
-        while np.linalg.norm(place_xyz - ee_xyz) > 0.01:
-            self.movep(place_xyz)
+        while np.linalg.norm(end_xyz - ee_xyz) > 0.01:
+            self.movep(end_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
@@ -328,10 +331,10 @@ class PickPlaceEnv():
             self.step_sim_and_render()
         
         # Hover over placed object.
-        place_xyz[2] = 0.8
+        end_xyz[2] = 0.8
         ee_xyz = self.get_ee_pos()
-        while np.linalg.norm(place_xyz - ee_xyz) > 0.01:
-            self.movep(place_xyz)
+        while np.linalg.norm(end_xyz - ee_xyz) > 0.01:
+            self.movep(end_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
             
@@ -362,7 +365,7 @@ class PickPlaceEnv():
         camera_position = np.array(pybullet.getLinkState(self.gripper.body_id, self.gripper.camera_id)[4])
         target_position = camera_position.copy()
         target_position[0] += 0.00001 # Look directly below
-        target_position[2] -= 0.1 # Look directly below
+        target_position[2] -= 1.0 # Look directly below
         camera_view_matrix = pybullet.computeViewMatrix(
             cameraEyePosition=camera_position,
             cameraTargetPosition=target_position, # [0, 0, 0]
@@ -502,7 +505,6 @@ class PickPlaceEnv():
         # print(f"row: {row}, col: {col}")
         # return self.chessboard_positions[row][col]
 
-        
         # check if there is a piece at the location
         if self.get_piece_at_position(end_pos) is not None:
             # print(self.get_piece_at_position(end_pos))
@@ -513,19 +515,19 @@ class PickPlaceEnv():
             start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
             end_coords = [0.25, 0.62, 0.8]
             start_coords[2] -= 0.0452
-            self.step({'pick': start_coords, 'place': end_coords})
+            self.step(start_coords, end_coords)
             start_pos = bestmove[:2]
             end_pos = bestmove[2:]
-            
+
         r0, c0 = self.pos_to_idx(start_pos)
         start_id = self.board[9-r0, c0]
-            
+
         start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
         end_coords = self.pos_to_coordinates(end_pos)
 
         start_coords[2] -= 0.0452
         end_coords[2] -= 0.037
-        self.step({'pick': start_coords, 'place': end_coords})
+        self.step(start_coords, end_coords)
         return "Move: " + bestmove
 
     def pos_to_idx(self, pos):
@@ -654,7 +656,7 @@ class PickPlaceEnv():
 
         piece_id_to_fen = defaultdict(lambda: ".", {
             # board_id: "  ",
-            
+
             piece_id_map["b1"]:  "k",
             piece_id_map["b2"]:  "a",
             piece_id_map["b3"]:  "a",
