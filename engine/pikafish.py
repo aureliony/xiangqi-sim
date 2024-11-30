@@ -13,7 +13,7 @@ class Pikafish:
         await self.process.stdin.drain()  # Ensure the command is flushed to the engine
 
 
-    async def read_output(self, timeout=1.0):
+    async def read_output(self, timeout=2.0):
         """Read all lines of output from the chess engine."""
         output = []
 

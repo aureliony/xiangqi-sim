@@ -56,7 +56,7 @@ class Robotiq2F85:
             except:
                 return
             time.sleep(0.001)
-            
+
     # Close gripper fingers.
     def activate(self):
         pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=0.5, force=10)
@@ -234,7 +234,8 @@ class SimulationEnv:
             enableCollision=False
         )
 
-        # return self.update_observations() #get_observation()
+        for _ in range(30):
+            self.step_sim_and_render()
 
     def servoj(self, joints):
         """Move to target joint positions with position control."""
@@ -245,12 +246,12 @@ class SimulationEnv:
         targetPositions=joints,
         positionGains=[0.01]*6)
 
-    def movep(self, position):
+    def movep(self, position, multiplier=64.0):
         """Move to target end effector position."""
         position = np.array(position)
         current_position = self.get_ee_pos()
         dist = np.sqrt(np.sum((current_position - position) ** 2.0))
-        steps = max(1, round(dist * 64.0))  # Increase steps for smoother and slower movement
+        steps = max(1, round(dist * multiplier))  # Increase steps for smoother and slower movement
         # print(f"Dist: {dist:.3f}, Steps: {steps}")
         for i in range(1, steps + 1):
             interpolated_position = current_position + (position - current_position) * (i / steps)

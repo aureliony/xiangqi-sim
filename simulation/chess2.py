@@ -4,6 +4,7 @@ import numpy as np
 import pybullet
 
 from simulation.robotiq import SimulationEnv
+from simulation.robotiq_rrt import SimulationEnvRRT
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
@@ -44,8 +45,10 @@ turn=0
 up=0
 stretch=0
 
-env = SimulationEnv()
+# env = SimulationEnv()
+env = SimulationEnvRRT()
 env.reset()
+
 
 def arm_control(env, pybullet, up, stretch):
     joints = pybullet.getJointStates(env.robot_id, env.joint_ids)
@@ -58,7 +61,7 @@ is_our_turn = True
 while True:
     time.sleep(1/240)
     speed = 20
-    
+
     for keycode, keystate in pybullet.getKeyboardEvents().items():
         # gripper
         # open gripper when 'o' is pressed
