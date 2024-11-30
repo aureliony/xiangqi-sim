@@ -145,7 +145,7 @@ class PickPlaceEnv():
         self.engine = Pikafish()
 
         # Default position of robot arm's end effector. to get out of the camera's view
-        self.default_position = [0, -0.1, 1.0]
+        self.default_position = [0, 0.0, 1.0]
         self.board_positions = [[0.0, 0.0, 0.0] * 9 for _ in range(10)]
 
     def reset(self):
@@ -381,6 +381,7 @@ class PickPlaceEnv():
 
         width, height, rgbPixels, depthPixels, segmentationMaskBuffer = cameraImage
 
+        segmentationMaskBuffer = np.rot90(segmentationMaskBuffer, axes=(1, 0))
         indices = np.argwhere(segmentationMaskBuffer == self.board_id)
         src_board_coords = self.get_board_coordinates(indices)
         dst_board_coords = np.array([
