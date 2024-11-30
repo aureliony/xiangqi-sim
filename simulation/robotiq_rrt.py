@@ -54,14 +54,20 @@ class SimulationEnvRRT(SimulationEnv):
             return True
         
         def smooth_path(path, max_checks=10):
-            smooth_path = [path[0]]  # Always include the start
-            for i in range(len(path) - 2):
-                start = path[i]
-                end = path[i + 2]
-                if is_collision_free(start, end):  # Skip intermediate points if straight line works
-                    continue
-                smooth_path.append(path[i + 1])
-            smooth_path.append(path[-1])  # Always include the goal
+            deleted_coord = True
+            goal = path[-1]
+            while deleted_coord:
+                deleted_coord = False
+                smooth_path = [path[0]]
+                for i in range(len(smooth_path)-2):
+                    start = path[i]
+                    end = path[i + 2]
+                    if is_collision_free(start, end):
+                        deleted_coord = True
+                        continue
+                    smooth_path.append(path[i + 1])
+                path = smooth_path
+            smooth_path.append(goal)
             return smooth_path
 
         def clamp_bounds(
