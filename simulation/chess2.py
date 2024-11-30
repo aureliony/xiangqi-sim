@@ -45,8 +45,8 @@ turn=0
 up=0
 stretch=0
 
-# env = SimulationEnv()
-env = SimulationEnvRRT()
+env = SimulationEnv()
+# env = SimulationEnvRRT()
 env.reset()
 
 

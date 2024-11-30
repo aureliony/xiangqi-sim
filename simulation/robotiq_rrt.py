@@ -93,7 +93,7 @@ class SimulationEnvRRT(SimulationEnv):
             max_iterations = 50000,
             step_size = 0.07
         ):
-            ee_pos = np.array(self.get_ee_pos())
+            ee_pos = np.array(self.get_end_effector_pos())
             tree: list[Node] = [Node(ee_pos)]
             tree_bounds = clamp_bounds(ee_pos)
             path_found = False
@@ -133,7 +133,7 @@ class SimulationEnvRRT(SimulationEnv):
             for waypoint in path:
                 self.movep(waypoint)
                 for _ in range(5):
-                    self.step_sim_and_render()
+                    self.step_sim_and_update_obs()
 
             time.sleep(0.5)
 
@@ -142,14 +142,14 @@ class SimulationEnvRRT(SimulationEnv):
 
         self.gripper.activate()
         for _ in range(240):
-            self.step_sim_and_render()
+            self.step_sim_and_update_obs()
 
         rrt(hover_end_xyz)
         rrt(end_xyz)
 
         self.gripper.release()
         for _ in range(240):
-            self.step_sim_and_render()
+            self.step_sim_and_update_obs()
 
         default_pos = np.array(self.default_position)
         rrt(default_pos)
