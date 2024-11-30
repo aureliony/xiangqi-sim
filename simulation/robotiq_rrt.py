@@ -21,6 +21,11 @@ class SimulationEnvRRT(SimulationEnv):
     def move_object(self, start_xyz, end_xyz):
         start_xyz = np.array(start_xyz)
         end_xyz = np.array(end_xyz)
+        hover_height = 0.1
+        hover_start_xyz = start_xyz.copy()
+        hover_end_xyz = end_xyz.copy()
+        hover_start_xyz[2] += hover_height
+        hover_end_xyz[2] += hover_height
 
         def sample_random_point(bounds):
             return np.random.uniform(low=bounds[0], high=bounds[1])
@@ -75,7 +80,7 @@ class SimulationEnvRRT(SimulationEnv):
         def rrt(
             goal_pos,
             max_iterations = 50000,
-            step_size = 0.05
+            step_size = 0.07
         ):
             ee_pos = np.array(self.get_ee_pos())
             tree: list[Node] = [Node(ee_pos)]
@@ -104,7 +109,7 @@ class SimulationEnvRRT(SimulationEnv):
                 print("RRT failed to find a path!")
                 return
 
-            # Reconstruct the path
+            # Reconstruct path
             path = []
             current_node = tree[-1]
             while current_node:
@@ -113,31 +118,27 @@ class SimulationEnvRRT(SimulationEnv):
             path.reverse()
             path = smooth_path(path)
 
-            # Execute the path
+            # Execute movement
             for waypoint in path:
-                self.movep(waypoint, 1000.0)
+                self.movep(waypoint)
                 for _ in range(5):
                     self.step_sim_and_render()
 
             time.sleep(0.5)
 
-        goal_pos = np.array(start_xyz)
-        rrt(goal_pos)
+        rrt(hover_start_xyz)
+        rrt(start_xyz)
 
-        # Gripper picks up the object
         self.gripper.activate()
         for _ in range(240):
             self.step_sim_and_render()
 
-        # Move to end pos
-        goal_pos = np.array(end_xyz)
-        rrt(goal_pos)
+        rrt(hover_end_xyz)
+        rrt(end_xyz)
 
-        # Release the object
         self.gripper.release()
         for _ in range(240):
             self.step_sim_and_render()
 
-        # Move back to the default position
         default_pos = np.array(self.default_position)
         rrt(default_pos)
