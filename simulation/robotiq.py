@@ -24,16 +24,16 @@ class Robotiq2F85:
         pos = [position[0] + 0.1339999999999999, position[1] - 0.49199999999872496, position[2] + 0.5]
         rot = pybullet.getQuaternionFromEuler([np.pi, 0, np.pi])
         urdf = 'resource/urdf/robotiq_2f_85/robotiq_2f_85.urdf'
-        self.body = pybullet.loadURDF(urdf, pos, rot)
-        self.n_joints = pybullet.getNumJoints(self.body)
+        self.body_id = pybullet.loadURDF(urdf, pos, rot)
+        self.n_joints = pybullet.getNumJoints(self.body_id)
         self.activated = False
 
         # Connect gripper base to robot tool.
-        pybullet.createConstraint(self.robot, tool, self.body, 0, jointType=pybullet.JOINT_FIXED, jointAxis=[0, 0, 0], parentFramePosition=[0, 0, 0], childFramePosition=[0, 0, -0.07], childFrameOrientation=pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]))
+        pybullet.createConstraint(self.robot, tool, self.body_id, 0, jointType=pybullet.JOINT_FIXED, jointAxis=[0, 0, 0], parentFramePosition=[0, 0, 0], childFramePosition=[0, 0, -0.07], childFrameOrientation=pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]))
 
         # Set friction coefficients for gripper fingers.
-        for i in range(pybullet.getNumJoints(self.body)):
-            pybullet.changeDynamics(self.body, i, lateralFriction=10.0, spinningFriction=1.0, rollingFriction=1.0, frictionAnchor=True)
+        for i in range(pybullet.getNumJoints(self.body_id)):
+            pybullet.changeDynamics(self.body_id, i, lateralFriction=10.0, spinningFriction=1.0, rollingFriction=1.0, frictionAnchor=True)
 
         # Start thread to handle additional gripper constraints.
         self.motor_joint = 1
@@ -41,28 +41,30 @@ class Robotiq2F85:
         self.constraints_thread.daemon = True
         self.constraints_thread.start()
 
+        self.camera_id = 2
+
 
     # Control joint positions by enforcing hard contraints on gripper behavior.
     # Set one joint as the open/close motor joint (other joints should mimic).
     def step(self):
         while True:
             try:
-                currj = [pybullet.getJointState(self.body, i)[0] for i in range(self.n_joints)]
+                currj = [pybullet.getJointState(self.body_id, i)[0] for i in range(self.n_joints)]
                 indj = [6, 3, 8, 5, 10]
                 targj = [currj[1], -currj[1], -currj[1], currj[1], currj[1]]
-                pybullet.setJointMotorControlArray(self.body, indj, pybullet.POSITION_CONTROL, targj, positionGains=np.ones(5))
+                pybullet.setJointMotorControlArray(self.body_id, indj, pybullet.POSITION_CONTROL, targj, positionGains=np.ones(5))
             except:
                 return
             time.sleep(0.001)
             
     # Close gripper fingers.
     def activate(self):
-        pybullet.setJointMotorControl2(self.body, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=0.5, force=10)
+        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=0.5, force=10)
         self.activated = True
 
     # Open gripper fingers.
     def release(self):
-        pybullet.setJointMotorControl2(self.body, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-0.5, force=10)
+        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-0.5, force=10)
         self.activated = False
 
     # If activated and object in gripper: check object contact.
@@ -72,8 +74,8 @@ class Robotiq2F85:
         obj, _, ray_frac = self.check_proximity()
         if self.activated:
             empty = self.grasp_width() < 0.01
-            cbody = self.body if empty else obj
-            if obj == self.body or obj == 0:
+            cbody = self.body_id if empty else obj
+            if obj == self.body_id or obj == 0:
                 return False
             return self.external_contact(cbody)
     #   else:
@@ -82,9 +84,9 @@ class Robotiq2F85:
     # Return if body is in contact with something other than gripper
     def external_contact(self, body=None):
         if body is None:
-            body = self.body
+            body = self.body_id
         pts = pybullet.getContactPoints(bodyA=body)
-        pts = [pt for pt in pts if pt[2] != self.body]
+        pts = [pt for pt in pts if pt[2] != self.body_id]
         return len(pts) > 0  # pylint: disable=g-explicit-length-test
 
     def check_grasp(self):
@@ -94,14 +96,14 @@ class Robotiq2F85:
         return success
     
     def grasp_width(self):
-        lpad = np.array(pybullet.getLinkState(self.body, 4)[0])
-        rpad = np.array(pybullet.getLinkState(self.body, 9)[0])
+        lpad = np.array(pybullet.getLinkState(self.body_id, 4)[0])
+        rpad = np.array(pybullet.getLinkState(self.body_id, 9)[0])
         dist = np.linalg.norm(lpad - rpad) - 0.047813
         return dist
 
     def check_proximity(self):
         ee_pos = np.array(pybullet.getLinkState(self.robot, self.tool)[0])
-        tool_pos = np.array(pybullet.getLinkState(self.body, 0)[0])
+        tool_pos = np.array(pybullet.getLinkState(self.body_id, 0)[0])
         vec = (tool_pos - ee_pos) / np.linalg.norm((tool_pos - ee_pos))
         ee_targ = ee_pos + vec
         ray_data = pybullet.rayTest(ee_pos, ee_targ)[0]
@@ -141,9 +143,9 @@ class PickPlaceEnv():
         self.i = 0
         
         self.engine = Pikafish()
-        
+
         # Default position of robot arm's end effector. to get out of the camera's view
-        self.default_position = [0, 0.4, 0.9]
+        self.default_position = [0, -0.1, 1.0]
         self.board_positions = [[0.0, 0.0, 0.0] * 9 for _ in range(10)]
 
     def reset(self):
@@ -230,7 +232,7 @@ class PickPlaceEnv():
             
         # Add collision filter to avoid gripper-board interaction
         pybullet.setCollisionFilterPair(
-            self.gripper.body,  # Gripper ID
+            self.gripper.body_id,  # Gripper ID
             board_id,           # board ID
             linkIndexA=-1,      # Entire gripper
             linkIndexB=-1,      # Entire table
@@ -340,28 +342,32 @@ class PickPlaceEnv():
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
-        # observation = self.update_observations() # get_observation()
-        # reward = self.get_reward()
-        # done = False
-        # info = {}
-        # return observation, reward, done, info
-
     def step_sim_and_render(self):
         pybullet.stepSimulation()
+        self.update_counter = getattr(self, 'update_counter', 0) + 1
+        if self.update_counter % 30 == 0:
+            self.update_observations(fast=True)
+            self.update_counter = 0
 
     # def get_reward(self):
     #     return None
 
-    def update_observations(self) -> None:
+    def update_observations(self, fast=False) -> None:
         # For simplicity, let's fix the camera position to directly above the board
+        # camera_view_matrix = pybullet.computeViewMatrix(
+        #     cameraEyePosition=[0, -0.1, 1.8],
+        #     cameraTargetPosition=[0.0, 0.0, 0.0],
+        #     cameraUpVector=[0.0, 0.0, 1.0]
+        # )
+        camera_position = pybullet.getLinkState(self.gripper.body_id, self.gripper.camera_id)[4]
         camera_view_matrix = pybullet.computeViewMatrix(
-            cameraEyePosition=[0, -0.1, 1.8],
+            cameraEyePosition=camera_position,
             cameraTargetPosition=[0.0, 0.0, 0.0],
             cameraUpVector=[0.0, 0.0, 1.0]
         )
 
         # pybullet.resetDebugVisualizerCamera(camera_distance, camera_yaw, camera_pitch, camera_target_position)
-        camera_proj_matrix = pybullet.computeProjectionMatrixFOV(fov=45.0, aspect=1.0, nearVal=0.1, farVal=10)
+        camera_proj_matrix = pybullet.computeProjectionMatrixFOV(fov=110.0, aspect=1.0, nearVal=0.1, farVal=10)
         # $initAxis(camera_link_pos, camera_link_ori)
         cameraImage = pybullet.getCameraImage(
             width=self.image_width,
@@ -370,6 +376,8 @@ class PickPlaceEnv():
             projectionMatrix=camera_proj_matrix,
             renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
         )
+        if fast:
+            return
 
         width, height, rgbPixels, depthPixels, segmentationMaskBuffer = cameraImage
 
@@ -433,7 +441,6 @@ class PickPlaceEnv():
         print()
 
     def board_to_fen(self, board, turn):
-        assert board.shape == (10, 9)
         # Initialize the FEN string
         fen_rows = []
 
@@ -466,6 +473,9 @@ class PickPlaceEnv():
 
     def make_move(self, is_our_turn=True):
         self.update_observations()
+        if self.board is None or self.board.shape != (10, 9):
+            print("Camera image cannot be processed.")
+            return
 
         # if self.i == 0:
         #     self.print_board()
