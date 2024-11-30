@@ -278,68 +278,60 @@ class PickPlaceEnv():
         end_xyz = np.array(end_xyz)
 
         # Compute hover xyz, which is slightly above the source and target coords
-        hover_z_height = 0.05
-        hover_pick_xyz = start_xyz.copy()
-        hover_place_xyz = end_xyz.copy()
-        hover_pick_xyz[2] += hover_z_height
-        hover_place_xyz[2] += hover_z_height
+        hover_height = 0.05
+        hover_start_xyz = start_xyz.copy()
+        hover_end_xyz = end_xyz.copy()
+        hover_start_xyz[2] += hover_height
+        hover_end_xyz[2] += hover_height
 
-        # Move to object.
+        # Move gripper to start
+        target_delta = 0.01
         ee_xyz = self.get_ee_pos()
-        while np.linalg.norm(hover_pick_xyz - ee_xyz) > 0.01:
-            self.movep(hover_pick_xyz)
+        while np.linalg.norm(hover_start_xyz - ee_xyz) > target_delta:
+            self.movep(hover_start_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
-        while np.linalg.norm(start_xyz - ee_xyz) > 0.01:
+        while np.linalg.norm(start_xyz - ee_xyz) > target_delta:
             self.movep(start_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
-        # Pick up object.
+        # Gripper picks up object
         self.gripper.activate()
         for _ in range(240):
             self.step_sim_and_render()
-        while np.linalg.norm(hover_pick_xyz - ee_xyz) > 0.01:
-            self.movep(hover_pick_xyz)
+        while np.linalg.norm(hover_start_xyz - ee_xyz) > target_delta:
+            self.movep(hover_start_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
         for _ in range(50):
             self.step_sim_and_render()
 
-        # Move to hover over place location.
-        while np.linalg.norm(hover_place_xyz - ee_xyz) > 0.01:
-            self.movep(hover_place_xyz)
+        # Move to hover end
+        while np.linalg.norm(hover_end_xyz - ee_xyz) > target_delta:
+            self.movep(hover_end_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
             
-        # Move to place location.
-        while np.linalg.norm(end_xyz - ee_xyz) > 0.01:
+        # Move to end
+        while np.linalg.norm(end_xyz - ee_xyz) > target_delta:
             self.movep(end_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
 
-        # Place down object.
-        # while (not self.gripper.detect_contact()) and (place_xyz[2] > 0.68):
-        #     place_xyz[2] -= 0.001
-        #     self.movep(place_xyz)
-        #     for _ in range(3):
-        #         self.step_sim_and_render()
         self.gripper.release()
         for _ in range(240):
             self.step_sim_and_render()
-        
-        # Hover over placed object.
-        end_xyz[2] = 0.8
-        ee_xyz = self.get_ee_pos()
-        while np.linalg.norm(end_xyz - ee_xyz) > 0.01:
-            self.movep(end_xyz)
+
+        # Move to hover end
+        while np.linalg.norm(hover_end_xyz - ee_xyz) > target_delta:
+            self.movep(hover_end_xyz)
             self.step_sim_and_render()
             ee_xyz = self.get_ee_pos()
-            
-        # Go back to default position.
-        ee_xyz = self.get_ee_pos()
+
+        # Go back to default position
         while np.linalg.norm(self.default_position - ee_xyz) > 0.01:
             self.movep(self.default_position)
             self.step_sim_and_render()
