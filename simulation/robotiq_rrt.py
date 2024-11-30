@@ -39,18 +39,13 @@ class SimulationEnvRRT(SimulationEnv):
             return tree[idx]
 
         def is_collision_free(p1, p2):
+            # ray_result = pybullet.rayTest(p1, p2)
+            # return all(hit[0] == -1 for hit in ray_result)
             steps = int(np.linalg.norm(p2 - p1) / 0.1)  # Break path into small steps
             for step in range(steps):
                 pos = p1 + step * (p2 - p1) / steps
-
-                # Expand the collision radius by checking within a margin
-                ray_results = pybullet.rayTest(pos, pos + [0, 0, -0.1])
-                safety_margin = 0.05 # Adjust safety margin here
-                for hit in ray_results:
-                    if hit[0] != -1:  # Collision detected
-                        distance = np.linalg.norm(np.array(hit[3]) - np.array(pos))
-                        if distance < safety_margin:  
-                            return False
+                if pybullet.rayTest(pos, pos + [0, 0, -0.1])[0][0] != -1:  # Ray-test for collisions
+                    return False
             return True
         
         def smooth_path(path, max_checks=10):
