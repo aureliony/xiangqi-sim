@@ -109,12 +109,10 @@ class Robotiq2F85:
         ray_data = pybullet.rayTest(ee_pos, ee_targ)[0]
         obj, link, ray_frac = ray_data[0], ray_data[1], ray_data[2]
         return obj, link, ray_frac
-  
-# Gym-style environment code
 
-class PickPlaceEnv():
 
-    def __init__(self, render=False, high_res=False, high_frame_rate=False):
+class SimulationEnv:
+    def __init__(self):
         self.dt = 1/480
 
         assets_path = os.path.dirname(os.path.abspath(""))
@@ -128,9 +126,6 @@ class PickPlaceEnv():
         self.tip_link_id = 10  # Link ID of gripper finger tips.
         self.gripper = None
 
-        self.render = render
-        self.high_res = high_res
-        self.high_frame_rate = high_frame_rate
         self.position = [0, 0.62, 0.62]
         
         image_aspect_ratio = 1.0
@@ -273,7 +268,7 @@ class PickPlaceEnv():
         ee_xyz = np.array(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
         return ee_xyz
 
-    def step(self, start_xyz, end_xyz):
+    def move_object(self, start_xyz, end_xyz):
         start_xyz = np.array(start_xyz)
         end_xyz = np.array(end_xyz)
 
@@ -507,7 +502,7 @@ class PickPlaceEnv():
             start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
             end_coords = [0.25, 0.62, 0.8]
             start_coords[2] -= 0.0452
-            self.step(start_coords, end_coords)
+            self.move_object(start_coords, end_coords)
             start_pos = bestmove[:2]
             end_pos = bestmove[2:]
 
@@ -519,7 +514,7 @@ class PickPlaceEnv():
 
         start_coords[2] -= 0.0452
         end_coords[2] -= 0.037
-        self.step(start_coords, end_coords)
+        self.move_object(start_coords, end_coords)
         return "Move: " + bestmove
 
     def pos_to_idx(self, pos):

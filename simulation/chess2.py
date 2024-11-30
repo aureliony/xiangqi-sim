@@ -3,7 +3,7 @@ import time
 import numpy as np
 import pybullet
 
-from simulation.robotiq import PickPlaceEnv
+from simulation.robotiq import SimulationEnv
 
 pybullet.connect(pybullet.GUI)
 pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
@@ -44,7 +44,7 @@ turn=0
 up=0
 stretch=0
 
-env = PickPlaceEnv(render=True, high_res=False, high_frame_rate=False)
+env = SimulationEnv(render=True, high_res=False, high_frame_rate=False)
 env.reset()
 
 def arm_control(env, pybullet, up, stretch):
