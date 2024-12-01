@@ -105,7 +105,7 @@ class Robotiq2F85:
 
 
 class SimulationEnv:
-    def __init__(self):
+    def __init__(self, engine):
         self.home_joints = (np.pi / 2, -np.pi / 2, np.pi / 2, -np.pi / 2, 3 * np.pi / 2, 0)  # Joint angles: (J0, J1, J2, J3, J4, J5).
         self.home_ee_euler = (np.pi, 0, np.pi)  # (RX, RY, RZ) rotation in Euler angles.
         self.ee_link_id = 9  # Link ID of UR5 end effector
@@ -126,7 +126,7 @@ class SimulationEnv:
         self.piece_id_to_fen = None
         self.board = None
 
-        self.engine = Pikafish()
+        self.engine = engine
 
         # Default position of robot arm's end effector. to get out of the camera's view
         self.default_position = [0, 0.0, 0.8]
@@ -450,8 +450,15 @@ class SimulationEnv:
         fen += f" {fen_turn} - - 0 1" # TODO: implement halfmoves and fullmoves
         return fen
 
-    def make_move(self, is_red_turn=True, move=None, print_evals=False) -> bool:
-        self.update_observations()
+    async def make_move(self, is_red_turn=True, move=None, print_evals=False):
+        while True:
+            try:
+                self.update_observations()
+                break
+            except:
+                self.gripper.release()
+                self.move_and_step(self.default_position)
+
         if self.board is None or self.board.shape != (10, 9):
             print("Camera image cannot be processed.")
             return
@@ -463,7 +470,7 @@ class SimulationEnv:
 
             fen = self.board_to_fen(self.board, is_red_turn)
             # print(fen)
-            move = asyncio.run(self.engine.get_best_move(fen, print_evals=print_evals))
+            move = await self.engine.get_best_move(fen, print_evals=print_evals)
             print("Pikafish thinks the best move is", move, flush=True)
             if move == '(none)':
                 # Game over

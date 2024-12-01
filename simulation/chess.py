@@ -1,8 +1,10 @@
 import argparse
+import asyncio
 import time
 
 import pybullet
 
+from engine.pikafish import Pikafish
 from simulation.robotiq import SimulationEnv
 from simulation.robotiq_rrt import SimulationEnvRRT
 
@@ -34,6 +36,41 @@ def get_user_move_input(is_red_turn: bool):
         print("Invalid input. It must be a 4-character string with valid board coordinates.")
 
 
+async def main_loop(num_humans):
+    process = await asyncio.create_subprocess_exec(
+        "engine/pikafish.exe",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+
+    engine = Pikafish(process)
+    env = SimulationEnv(engine)
+    # env = SimulationEnvRRT(engine)
+    env.reset()
+
+    is_red_turn = True
+    is_game_over = False
+    while True:
+        if is_game_over:
+            time.sleep(1)
+            continue
+
+        move = None
+        if num_humans == 2 or (num_humans == 1 and is_red_turn):
+            move = get_user_move_input(is_red_turn)
+        else:
+            print("Pikafish is thinking...")
+        move_outcome = await env.make_move(is_red_turn=is_red_turn, move=move, print_evals=(num_humans == 0))
+
+        if move_outcome is True:
+            is_red_turn = not is_red_turn
+        elif move_outcome is False:
+            print("Invalid move.")
+        else:
+            is_game_over = True
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -59,27 +96,4 @@ if __name__ == '__main__':
         cameraTargetPosition=[0.08, -0.05, 0.6]
     )
 
-    env = SimulationEnv()
-    # env = SimulationEnvRRT()
-    env.reset()
-
-    is_red_turn = True
-    is_game_over = False
-    while True:
-        if is_game_over:
-            time.sleep(1)
-            continue
-
-        move = None
-        if num_humans == 2 or (num_humans == 1 and is_red_turn):
-            move = get_user_move_input(is_red_turn)
-        else:
-            print("Pikafish is thinking...")
-        move_outcome = env.make_move(is_red_turn=is_red_turn, move=move, print_evals=(num_humans == 0))
-
-        if move_outcome is True:
-            is_red_turn = not is_red_turn
-        elif move_outcome is False:
-            print("Invalid move.")
-        else:
-            is_game_over = True
+    asyncio.run(main_loop(num_humans))

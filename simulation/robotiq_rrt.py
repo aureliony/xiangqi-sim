@@ -16,8 +16,8 @@ class Node:
 
 
 class SimulationEnvRRT(SimulationEnv):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def move_object(self, start_xyz, end_xyz):
         start_xyz = np.array(start_xyz)
