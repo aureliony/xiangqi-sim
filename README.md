@@ -30,9 +30,11 @@ Clear video results (2%)
 
 ## Run the simulation
 
-Run the simulation with the command `python -m simulation.chess`.
+Run the simulation (Pikafish vs. Pikafish) with the command `python -m simulation.chess`.
 
-To enable human interaction, run `python -m simulation.chess --human`. The user will play the red side against the robot.
+To play as red against Pikafish, run `python -m simulation.chess --humans 1`.
+
+To play against yourself or a friend, run `python -m simulation.chess --humans 2`.
 
 ## References
 
