@@ -60,11 +60,21 @@ class Robotiq2F85:
         """Close gripper fingers"""
         pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=1.5, force=50)
         self.activated = True
+        prev_grasp_width = self.grasp_width()
+        time.sleep(0.01)
+        while prev_grasp_width > self.grasp_width():
+            prev_grasp_width = self.grasp_width()
+            time.sleep(0.01)
 
     def release(self):
         """Open gripper fingers"""
         pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-0.8, force=50)
         self.activated = False
+        prev_grasp_width = self.grasp_width()
+        time.sleep(0.01)
+        while prev_grasp_width < self.grasp_width():
+            prev_grasp_width = self.grasp_width()
+            time.sleep(0.01)
 
     def detect_contact(self):
         """
@@ -282,21 +292,10 @@ class SimulationEnv:
         self.move_and_step(hover_start_xyz)
         self.move_and_step(start_xyz)
         self.gripper.activate()
-        prev_grasp_width = self.gripper.grasp_width()
-        time.sleep(0.01)
-        while prev_grasp_width > self.gripper.grasp_width():
-            prev_grasp_width = self.gripper.grasp_width()
-            time.sleep(0.01)
         self.move_and_step(hover_start_xyz)
         self.move_and_step(hover_end_xyz)
         self.move_and_step(end_xyz)
         self.gripper.release()
-        prev_grasp_width = self.gripper.grasp_width()
-        time.sleep(0.01)
-        while prev_grasp_width < self.gripper.grasp_width():
-            prev_grasp_width = self.gripper.grasp_width()
-            time.sleep(0.01)
-
         self.move_and_step(hover_end_xyz)
         self.move_and_step(self.default_position)
 

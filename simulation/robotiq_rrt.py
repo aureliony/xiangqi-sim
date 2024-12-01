@@ -20,14 +20,6 @@ class SimulationEnvRRT(SimulationEnv):
         super().__init__(*args, **kwargs)
 
     def move_object(self, start_xyz, end_xyz):
-        start_xyz = np.array(start_xyz)
-        end_xyz = np.array(end_xyz)
-        hover_height = 0.1
-        hover_start_xyz = start_xyz.copy()
-        hover_end_xyz = end_xyz.copy()
-        hover_start_xyz[2] += hover_height
-        hover_end_xyz[2] += hover_height
-
         def sample_random_point(bounds):
             return np.random.uniform(low=bounds[0], high=bounds[1])
 
@@ -48,8 +40,9 @@ class SimulationEnvRRT(SimulationEnv):
                 if pybullet.rayTest(pos, pos + [0, 0, -0.1])[0][0] != -1:  # Ray-test for collisions
                     return False
             return True
-        
-        def smooth_path(path, max_checks=10):
+
+        def smooth_path(path):
+            # return path
             deleted_coord = True
             goal = path[-1]
             while deleted_coord:
@@ -87,7 +80,7 @@ class SimulationEnvRRT(SimulationEnv):
         def rrt(
             goal_pos,
             max_iterations = 50000,
-            step_size = 0.07
+            step_size = 0.07 # Needs to be larger than the chess piece height, otherwise all random nodes will collide with the piece
         ):
             ee_pos = np.array(self.get_end_effector_pos())
             tree: list[Node] = [Node(ee_pos)]
@@ -127,25 +120,27 @@ class SimulationEnvRRT(SimulationEnv):
 
             # Execute movement
             for waypoint in path:
-                self.movep(waypoint)
-                for _ in range(5):
-                    self.step_sim_and_update_obs()
+                self.move_and_step(waypoint)
 
-            time.sleep(0.5)
+            # time.sleep(0.5)
 
-        rrt(hover_start_xyz)
+
+        start_xyz = np.array(start_xyz)
+        end_xyz = np.array(end_xyz)
+        hover = True
+        hover_height = 0.1
+        hover_start_xyz = start_xyz.copy()
+        hover_end_xyz = end_xyz.copy()
+        hover_start_xyz[2] += hover_height
+        hover_end_xyz[2] += hover_height
+
+        if hover:
+            rrt(hover_start_xyz)
         rrt(start_xyz)
-
         self.gripper.activate()
-        for _ in range(240):
-            self.step_sim_and_update_obs()
-
-        rrt(hover_end_xyz)
+        if hover:
+            rrt(hover_end_xyz)
         rrt(end_xyz)
-
         self.gripper.release()
-        for _ in range(240):
-            self.step_sim_and_update_obs()
-
         default_pos = np.array(self.default_position)
         rrt(default_pos)
