@@ -5,29 +5,24 @@ import time
 from collections import defaultdict
 
 import cv2
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 import pybullet
-import pybullet_data
-from PIL import Image
 
 from engine.pikafish import Pikafish
 
-BOUNDS = np.float32([[-0.3, 0.3], [-0.8, -0.2], [0, 0.15]])
-PIXEL_SIZE = 0.00267857
-urdf_dir = "resource/urdf"
+URDF_DIR = "resource/urdf"
+TEXTURE_DIR = "resource/texture"
 
 class Robotiq2F85:
-    """Gripper handling for Robotiq 2F85."""
+    """Gripper handling for Robotiq 2F-85"""
 
     def __init__(self, robot, tool, position):
         self.robot = robot
         self.tool = tool
         pos = [position[0] + 0.1339999999999999, position[1] - 0.49199999999872496, position[2] + 0.5]
         rot = pybullet.getQuaternionFromEuler([np.pi, 0, np.pi])
-        urdf = 'resource/urdf/robotiq_2f_85/robotiq_2f_85.urdf'
-        self.body_id = pybullet.loadURDF(urdf, pos, rot)
+        robotiq_2f_85_urdf = os.path.join(URDF_DIR, 'robotiq_2f_85/robotiq_2f_85.urdf')
+        self.body_id = pybullet.loadURDF(robotiq_2f_85_urdf, pos, rot)
         self.n_joints = pybullet.getNumJoints(self.body_id)
         self.activated = False
 
@@ -93,9 +88,6 @@ class Robotiq2F85:
         pts = [pt for pt in pts if pt[2] != self.body_id]
         return len(pts) > 0  # pylint: disable=g-explicit-length-test
 
-    def is_grasp_successful(self):
-        return self.grasp_width() <= 0.063
-
     def grasp_width(self):
         lpad = np.array(pybullet.getLinkState(self.body_id, 4)[0])
         rpad = np.array(pybullet.getLinkState(self.body_id, 9)[0])
@@ -114,13 +106,6 @@ class Robotiq2F85:
 
 class SimulationEnv:
     def __init__(self):
-        self.dt = 1/480
-
-        assets_path = os.path.dirname(os.path.abspath(""))
-        pybullet.setAdditionalSearchPath(assets_path)
-        pybullet.setAdditionalSearchPath(pybullet_data.getDataPath())
-        pybullet.setTimeStep(self.dt)
-
         self.home_joints = (np.pi / 2, -np.pi / 2, np.pi / 2, -np.pi / 2, 3 * np.pi / 2, 0)  # Joint angles: (J0, J1, J2, J3, J4, J5).
         self.home_ee_euler = (np.pi, 0, np.pi)  # (RX, RY, RZ) rotation in Euler angles.
         self.ee_link_id = 9  # Link ID of UR5 end effector
@@ -148,30 +133,30 @@ class SimulationEnv:
         self.board_positions = [[0.0, 0.0, 0.0] * 9 for _ in range(10)]
 
     def reset(self):
-        urdf_dir = "resource/urdf"
-
         ################ Plane
-        plane_id = pybullet.loadURDF(os.path.join(urdf_dir,"/plane.urdf"), [0, 0, 0])
-        plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
+        plane_id = pybullet.loadURDF(
+            os.path.join(URDF_DIR, "plane.urdf"),
+            basePosition=[0, 0, 0]
+        )
+        plane_texture_id = pybullet.loadTexture(os.path.join(TEXTURE_DIR, "plane.jpg"))
         pybullet.changeVisualShape(0, -1, textureUniqueId=plane_texture_id)
 
         ################ Table
         table_scaling = 1.0
         table_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi/2])
         table_id = pybullet.loadURDF(
-            fileName=os.path.join(urdf_dir,"table.urdf"),
+            fileName=os.path.join(URDF_DIR, "table.urdf"),
             useFixedBase=True,
             basePosition=self.table_position,
             baseOrientation=table_orientation,
             globalScaling=table_scaling
         )
-        # table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
-        table_texture_id = pybullet.loadTexture("resource/texture/table.png")
+        table_texture_id = pybullet.loadTexture(os.path.join(TEXTURE_DIR, "table.png"))
         pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
-        
+
         ################ Robot
         self.robot_id = pybullet.loadURDF(
-            "resource/urdf/ur5e/ur5e.urdf",
+            os.path.join(URDF_DIR, "ur5e/ur5e.urdf"),
             self.robot_position,
             globalScaling=1.2,
             flags=pybullet.URDF_USE_MATERIAL_COLORS_FROM_MTL
@@ -194,7 +179,7 @@ class SimulationEnv:
         box_scaling = 0.08
         box_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi])
         box_id = pybullet.loadURDF(
-            fileName=os.path.join(urdf_dir,"obj_libs/box/box.urdf"),
+            fileName=os.path.join(URDF_DIR, "obj_libs/box/box.urdf"),
             useFixedBase=True,
             basePosition=self.box_position,
             baseOrientation=box_orientation,
@@ -208,7 +193,7 @@ class SimulationEnv:
         board_scaling = 0.5
         board_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi])
         board_id = pybullet.loadURDF(
-            fileName=os.path.join(urdf_dir,"obj_libs/chessboard/chessboard.urdf"),
+            fileName=os.path.join(URDF_DIR, "obj_libs/chessboard/chessboard.urdf"),
             useFixedBase=True,
             basePosition=self.board_position,
             baseOrientation=board_orientation,
@@ -576,11 +561,13 @@ class SimulationEnv:
         red = ["r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "r16"]
         for r in red:
             base_position = self.pos_to_coordinates(chess_pieces[r])
-            piece_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+r+"/model.urdf"),
-                                            useFixedBase=False,
-                                            globalScaling=cp_scaling,
-                                            basePosition=base_position,
-                                            baseOrientation=r_orientation)
+            piece_id = pybullet.loadURDF(
+                fileName=os.path.join(URDF_DIR, "obj_libs/chesspieces/"+r+"/model.urdf"),
+                useFixedBase=False,
+                globalScaling=cp_scaling,
+                basePosition=base_position,
+                baseOrientation=r_orientation
+            )
             pybullet.changeVisualShape(piece_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
             pybullet.changeDynamics(
                 piece_id,  # ID of the chess piece
@@ -596,11 +583,13 @@ class SimulationEnv:
         black = ["b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15", "b16"]
         for b in black:
             piece_position = self.pos_to_coordinates(chess_pieces[b])
-            piece_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chesspieces/"+b+"/model.urdf"),
-                                            useFixedBase=False,
-                                            globalScaling=cp_scaling,
-                                            basePosition=piece_position,
-                                            baseOrientation=b_orientation)
+            piece_id = pybullet.loadURDF(
+                fileName=os.path.join(URDF_DIR, "obj_libs/chesspieces/"+b+"/model.urdf"),
+                useFixedBase=False,
+                globalScaling=cp_scaling,
+                basePosition=piece_position,
+                baseOrientation=b_orientation
+            )
             pybullet.changeVisualShape(piece_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
             pybullet.changeDynamics(
                 piece_id,  # ID of the chess piece

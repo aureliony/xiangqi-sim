@@ -38,14 +38,14 @@ The project is organized into the following key components:
 
 ## Run the simulation
 
-Run the simulation (Pikafish vs. Pikafish) with the command `python -m simulation.chess`.
+Run the simulation (Pikafish vs. Pikafish) with the command `python -m simulation.chess`
 
-To play as red against Pikafish, run `python -m simulation.chess --humans 1`.
+To play as red against Pikafish, run `python -m simulation.chess --humans 1`
 
-To play against yourself or a friend, run `python -m simulation.chess --humans 2`.
+To play against yourself or a friend, run `python -m simulation.chess --humans 2`
 
 ## References
 
-PyBullet Documentation: <https://pybullet.org/wordpress/index.php/forum-2/>
+[PyBullet Documentation](https://pybullet.org/wordpress/index.php/forum-2/)
 
-You can also use ChatGPT or Cursor to get the API of PyBullet.
+[Robotiq 2F-85 Manual](https://assets.robotiq.com/website-assets/support_documents/document/2F-85_2F-140_Instruction_Manual_e-Series_PDF_20190206.pdf)

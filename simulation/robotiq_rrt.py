@@ -1,9 +1,10 @@
 import time
+
 import numpy as np
 import pybullet
 
 from simulation.robotiq import SimulationEnv
-from scipy.spatial import KDTree
+
 
 # Tree representation
 class Node:
@@ -31,12 +32,12 @@ class SimulationEnvRRT(SimulationEnv):
             return np.random.uniform(low=bounds[0], high=bounds[1])
 
         def find_nearest(tree, point):
-            # # TODO: make this faster than O(n)
-            # return min(tree, key=lambda node: np.linalg.norm(node.position - point))
+            # TODO: make this faster than O(n)
+            return min(tree, key=lambda node: np.linalg.norm(node.position - point))
         
-            kdtree = KDTree([node.position for node in tree])
-            _, idx = kdtree.query(point)
-            return tree[idx]
+            # kdtree = KDTree([node.position for node in tree])
+            # _, idx = kdtree.query(point)
+            # return tree[idx]
 
         def is_collision_free(p1, p2):
             # ray_result = pybullet.rayTest(p1, p2)
