@@ -12,8 +12,8 @@ The robot uses the **Pikafish** open-source Xiangqi engine to determine optimal 
 
 ![Project Structure](imgs/project_structure.png)
 
-- **Robot Model**: A UR5e robotic arm with a Robotiq 2F-85.
-- **Game Engine**: Pikafish, an open-source Xiangqi engine, used for move calculation and evaluation.
+- **Robot Model**: A UR5e robotic arm with a Robotiq 2F-85 gripper.
+- **Game Engine**: Pikafish.
 - **Motion Planning**: Simple Pick-and-Place, and Rapidly-exploring Random Trees (RRT).
 - **Piece Classification**: PyBullet’s 3D camera and segmentation mask, with image processing in OpenCV.
 - **Chess Pieces and Board Design**: Modeled using Blender, with color-coded pieces for improved visibility in computer vision tasks.
