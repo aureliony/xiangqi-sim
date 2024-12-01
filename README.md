@@ -1,20 +1,28 @@
-# Self-Playing XiangQi Autonomous Robot
+# Autonomous XiangQi-Playing Robot
 
-In this project, the task is to design an autonomous robot that can self-play XiangQi. Interaction with the user is also possible with move inputs into the terminal.
+![PyBullet Setup](imgs/setup_photo.png)
 
-## Requirements
+## Overview
 
-You should implement the navigation and motion planning algorithms by yourself to accomplish the task.
+This project integrates robotics and AI to develop an autonomous system capable of playing **Xiangqi** (Chinese Chess). The system uses a **6-DOF UR5e robotic arm** with a **Robotiq gripper** for precise manipulation of Xiangqi pieces. It employs **Pikafish**, an open-source Xiangqi engine, for decision-making and gameplay strategy. The project focuses on real-world applications in robotic game-playing, highlighting human-robot interaction and motion planning for handling complex tasks.
 
-### Project Materials (10%)
+## Project Structure
 
-Clear and readable project report (4%)
-Runnable codebase (4%)
-Clear video results (2%)
+The project is organized into the following key components:
 
-### Bonus (10%)
+- **Robot Model**: A UR5e robotic arm with a Robotiq gripper, capable of performing accurate, collision-free movements to manipulate Xiangqi pieces.
+- **Game Engine**: Pikafish, an open-source Xiangqi engine, used for move calculation and evaluation.
+- **Motion Planning**: The arm uses two motion planning algorithms (Pick-and-Place and Rapidly-exploring Random Tree) to plan collision-free paths for piece manipulation.
+- **Piece Classification**: Object recognition and classification are handled using PyBullet’s 3D camera and segmentation mask, with image processing in OpenCV.
+- **Chess Pieces and Board Design**: Xiangqi chess pieces and the board are modeled using Blender, with color-coded pieces for improved visibility in computer vision tasks.
 
-5%: if you implement trajectory planning for the robot arm (including inverse dynamics)
+## Features
+
+- **6-DOF Manipulation**: The UR5e robot arm with a Robotiq gripper allows for smooth and accurate manipulation of Xiangqi pieces.
+- **Collision-Free Path Planning**: The Pick-and-Place and RRT algorithms ensure safe and accurate movement of the robot arm.
+- **AI-Driven Decision Making**: The Pikafish engine powers move calculation and board evaluation, driving the robot’s decision-making in Xiangqi.
+- **Piece Recognition**: A fixed overhead camera and segmentation mask allow for precise piece identification using computer vision techniques.
+- **Simulated Gameplay**: The system was tested in PyBullet for realistic simulation of gameplay, including move execution and piece handling.
 
 ## Installation
 
