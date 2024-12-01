@@ -491,11 +491,11 @@ class SimulationEnv:
                 print_evals=print_evals,
                 depth=depth
             )
-            print(f"Pikafish (level {depth}) thinks the best move is", move, flush=True)
             if move == '(none)':
-                # Game over
-                print("Game over!")
+                winner = 'black' if is_red_turn else 'red'
+                print(f"Game over, {winner} wins!")
                 return None
+            print(f"Pikafish (level {depth}) thinks the best move is", move, flush=True)
 
         # get xyz coordinates of targets
         start_pos = move[:2]
