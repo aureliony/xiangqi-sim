@@ -1,4 +1,3 @@
-import asyncio
 import os
 import threading
 import time
@@ -127,7 +126,7 @@ class Robotiq2F85:
 
 
 class SimulationEnv:
-    def __init__(self, engine):
+    def __init__(self, engine: Pikafish):
         self.home_joints = (np.pi / 2, -np.pi / 2, np.pi / 2, -np.pi / 2, 3 * np.pi / 2, 0)  # Joint angles: (J0, J1, J2, J3, J4, J5).
         self.home_ee_euler = (np.pi, 0, np.pi)  # (RX, RY, RZ) rotation in Euler angles.
         self.ee_link_id = 9  # Link ID of UR5 end effector
@@ -461,7 +460,13 @@ class SimulationEnv:
         fen += f" {fen_turn} - - 0 1" # TODO: implement halfmoves and fullmoves
         return fen
 
-    async def make_move(self, is_red_turn=True, move=None, print_evals=False):
+    async def make_move(
+        self,
+        is_red_turn=True,
+        move=None,
+        print_evals=False,
+        depth=8
+    ):
         while True:
             try:
                 self.update_observations()
@@ -481,8 +486,12 @@ class SimulationEnv:
 
             fen = self.board_to_fen(self.board, is_red_turn)
             # print(fen)
-            move = await self.engine.get_best_move(fen, print_evals=print_evals)
-            print("Pikafish thinks the best move is", move, flush=True)
+            move = await self.engine.get_best_move(
+                fen,
+                print_evals=print_evals,
+                depth=depth
+            )
+            print(f"Pikafish (level {depth}) thinks the best move is", move, flush=True)
             if move == '(none)':
                 # Game over
                 print("Game over!")

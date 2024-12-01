@@ -36,7 +36,7 @@ def get_user_move_input(is_red_turn: bool):
         print("Invalid input. It must be a 4-character string with valid board coordinates.")
 
 
-async def main_loop(num_humans):
+async def main_loop(num_humans, depth):
     process = await asyncio.create_subprocess_exec(
         "engine/pikafish.exe",
         stdin=asyncio.subprocess.PIPE,
@@ -61,7 +61,12 @@ async def main_loop(num_humans):
             move = get_user_move_input(is_red_turn)
         else:
             print("Pikafish is thinking...")
-        move_outcome = await env.make_move(is_red_turn=is_red_turn, move=move, print_evals=(num_humans == 0))
+        move_outcome = await env.make_move(
+            is_red_turn=is_red_turn,
+            move=move,
+            print_evals=(num_humans == 0),
+            depth=depth
+        )
 
         if move_outcome is True:
             is_red_turn = not is_red_turn
@@ -78,12 +83,20 @@ if __name__ == '__main__':
         type=int,
         default=0,
         choices=[0, 1, 2],
-        help="Number of humans in the game. Allowed values are 0, 1, or 2."
+        help="Number of human players in the game."
+    )
+    parser.add_argument(
+        "--level",
+        type=int,
+        default=8,
+        choices=list(range(1, 20+1)),
+        help="Difficulty level of Pikafish."
     )
 
     # Parse the arguments
     args = parser.parse_args()
     num_humans = args.humans
+    depth = args.level
 
     pybullet.connect(pybullet.GUI)
     pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
@@ -96,4 +109,4 @@ if __name__ == '__main__':
         cameraTargetPosition=[0.08, -0.05, 0.6]
     )
 
-    asyncio.run(main_loop(num_humans))
+    asyncio.run(main_loop(num_humans, depth))
