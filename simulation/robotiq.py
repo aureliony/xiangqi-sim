@@ -131,8 +131,8 @@ class SimulationEnv:
 
         self.table_position = [0, 0, 0]
         self.robot_position = [0.0, 0.57, 0.6]
-        self.box_position = [0.0, -0.52, 0.67]
-        self.box_drop_position = [0.0, -0.45, 0.8]
+        self.box_position = [0.5, 0.0, 0.67]
+        self.box_drop_position = [0.5, 0.0, 0.8]
         self.board_position = [0.09, -0.05, 0.6]
 
         image_aspect_ratio = 1.0
@@ -170,10 +170,31 @@ class SimulationEnv:
         # table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
         table_texture_id = pybullet.loadTexture("resource/texture/table.png")
         pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
+        
+        ################ Robot
+        self.robot_id = pybullet.loadURDF(
+            "resource/urdf/ur5e/ur5e.urdf",
+            self.robot_position,
+            globalScaling=1.2,
+            flags=pybullet.URDF_USE_MATERIAL_COLORS_FROM_MTL
+        )
+        self.joint_ids = [pybullet.getJointInfo(self.robot_id, i) for i in range(pybullet.getNumJoints(self.robot_id))]
+        self.joint_ids = [j[0] for j in self.joint_ids if j[2] == pybullet.JOINT_REVOLUTE]
+
+        # Move robot to home configuration
+        for i in range(len(self.joint_ids)):
+            pybullet.resetJointState(self.robot_id, self.joint_ids[i], self.home_joints[i])
+
+        # Add gripper
+        if self.gripper is not None:
+            while self.gripper.constraints_thread.is_alive():
+                self.constraints_thread_active = False
+        self.gripper = Robotiq2F85(self.robot_id, self.ee_link_id, self.robot_position)
+        self.gripper.release()
 
         ################ Box
         box_scaling = 0.08
-        box_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi/2])
+        box_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi])
         box_id = pybullet.loadURDF(
             fileName=os.path.join(urdf_dir,"obj_libs/box/box.urdf"),
             useFixedBase=True,
@@ -197,28 +218,8 @@ class SimulationEnv:
         )
         self.board_id = board_id
         pybullet.changeVisualShape(board_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-        pybullet.changeDynamics(board_id, -1, mass=1.0)
+        # pybullet.changeDynamics(board_id, -1, mass=1.0)
 
-        ################ Robot
-        self.robot_id = pybullet.loadURDF(
-            "resource/urdf/ur5e/ur5e.urdf",
-            self.robot_position,
-            globalScaling=1.2,
-            flags=pybullet.URDF_USE_MATERIAL_COLORS_FROM_MTL
-        )
-        self.joint_ids = [pybullet.getJointInfo(self.robot_id, i) for i in range(pybullet.getNumJoints(self.robot_id))]
-        self.joint_ids = [j[0] for j in self.joint_ids if j[2] == pybullet.JOINT_REVOLUTE]
-
-        # Move robot to home configuration
-        for i in range(len(self.joint_ids)):
-            pybullet.resetJointState(self.robot_id, self.joint_ids[i], self.home_joints[i])
-
-        # Add gripper
-        if self.gripper is not None:
-            while self.gripper.constraints_thread.is_alive():
-                self.constraints_thread_active = False
-        self.gripper = Robotiq2F85(self.robot_id, self.ee_link_id, self.robot_position)
-        self.gripper.release()
 
         ################ Chess Pieces
         self.piece_id_to_char, self.piece_id_to_fen = self.initialize_chess_pieces(self.board_position)
@@ -258,7 +259,7 @@ class SimulationEnv:
         self.move_joints_to_pos(joints)
         self.step_sim_and_update_obs()
         # position = np.array(position)
-        # current_position = self.get_ee_pos()
+        # current_position = self.get_end_effector_pos()
         # dist = np.sqrt(np.sum((current_position - position) ** 2.0))
         # steps = max(1, round(dist * multiplier))  # Increase steps for smoother and slower movement
         # # print(f"Dist: {dist:.3f}, Steps: {steps}")
@@ -271,8 +272,8 @@ class SimulationEnv:
         #         targetOrientation=pybullet.getQuaternionFromEuler(self.home_ee_euler),
         #         maxNumIterations=100
         #     )
-        #     self.servoj(joints)
-        #     self.step_sim_and_render()
+        #     self.move_joints_to_pos(joints)
+        #     self.step_sim_and_update_obs()
 
     def get_end_effector_pos(self):
         return np.array(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
@@ -574,8 +575,13 @@ class SimulationEnv:
                                             basePosition=base_position,
                                             baseOrientation=r_orientation)
             pybullet.changeVisualShape(piece_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-            pybullet.changeDynamics(piece_id, -1, lateralFriction=obj_friction_ceof)
-            pybullet.changeDynamics(piece_id, -1, mass=PIECE_MASS)
+            pybullet.changeDynamics(
+                piece_id,  # ID of the chess piece
+                -1,        # For the entire object
+                lateralFriction=obj_friction_ceof,  # Increased friction
+                spinningFriction=1.0,  # Improved rotation stability
+                    mass=PIECE_MASS  # Light mass for chess piece
+            )
             # Store IDs in a dictionary for easier access
             piece_id_map[r] = piece_id
 
@@ -589,8 +595,13 @@ class SimulationEnv:
                                             basePosition=piece_position,
                                             baseOrientation=b_orientation)
             pybullet.changeVisualShape(piece_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-            pybullet.changeDynamics(piece_id, -1, lateralFriction=obj_friction_ceof)
-            pybullet.changeDynamics(piece_id, -1, mass=PIECE_MASS)
+            pybullet.changeDynamics(
+                piece_id,  # ID of the chess piece
+                -1,        # For the entire object
+                lateralFriction=obj_friction_ceof,  # Increased friction
+                spinningFriction=1.0,  # Improved rotation stability
+                    mass=PIECE_MASS  # Light mass for chess piece
+                )
             # Store IDs in a dictionary for easier access
             piece_id_map[b] = piece_id
 
