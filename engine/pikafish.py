@@ -28,7 +28,7 @@ class Pikafish:
                 break
         return lst
 
-    async def get_best_move(self, fen: str = None, depth: int = 20, print_evals=False) -> str:
+    async def get_best_move(self, fen: str = None, depth: int = 8, print_evals=False) -> str:
         """
         go depth 1 -> "bestmove m"
         position startpos moves m1 m2...

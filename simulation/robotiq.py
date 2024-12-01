@@ -58,7 +58,13 @@ class Robotiq2F85:
 
     def activate(self):
         """Close gripper fingers"""
-        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=1.5, force=50)
+        pybullet.setJointMotorControl2(
+            self.body_id,
+            self.motor_joint,
+            pybullet.VELOCITY_CONTROL,
+            targetVelocity=1.5,
+            force=5
+        )
         self.activated = True
         prev_grasp_width = self.grasp_width()
         time.sleep(0.01)
@@ -68,7 +74,13 @@ class Robotiq2F85:
 
     def release(self):
         """Open gripper fingers"""
-        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-0.8, force=50)
+        pybullet.setJointMotorControl2(
+            self.body_id,
+            self.motor_joint,
+            pybullet.VELOCITY_CONTROL,
+            targetVelocity=-0.8,
+            force=5
+        )
         self.activated = False
         prev_grasp_width = self.grasp_width()
         time.sleep(0.01)
@@ -474,6 +486,7 @@ class SimulationEnv:
             if move == '(none)':
                 # Game over
                 print("Game over!")
+                return None
 
         # get xyz coordinates of targets
         start_pos = move[:2]
