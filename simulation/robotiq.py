@@ -3,13 +3,14 @@ import os
 import threading
 import time
 from collections import defaultdict
-from PIL import Image
-import matplotlib.pyplot as plt
+
 import cv2
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pybullet
 import pybullet_data
+from PIL import Image
 
 from engine.pikafish import Pikafish
 
@@ -37,15 +38,15 @@ class Robotiq2F85:
         for i in range(pybullet.getNumJoints(self.body_id)):
             pybullet.changeDynamics(self.body_id, i, lateralFriction=10.0, spinningFriction=1.0, rollingFriction=1.0, frictionAnchor=True)
 
-        # Start thread to handle additional gripper constraints.
         self.motor_joint = 1
-        self.constraints_thread = threading.Thread(target=self.step)
+        self.camera_id = 2
+
+        # Start thread to handle additional gripper constraints.
+        self.constraints_thread = threading.Thread(target=self.gripper_step)
         self.constraints_thread.daemon = True
         self.constraints_thread.start()
 
-        self.camera_id = 2
-
-    def step(self):
+    def gripper_step(self):
         """
         Control joint positions by enforcing hard contraints on gripper behavior.
         Set one joint as the open/close motor joint (other joints should mimic).
@@ -58,16 +59,16 @@ class Robotiq2F85:
                 pybullet.setJointMotorControlArray(self.body_id, indj, pybullet.POSITION_CONTROL, targj, positionGains=np.ones(5))
             except:
                 return
-            time.sleep(0.001)
+            time.sleep(0.01)
 
     def activate(self):
         """Close gripper fingers"""
-        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=0.5, force=10)
+        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=1.5, force=50)
         self.activated = True
 
     def release(self):
         """Open gripper fingers"""
-        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-0.5, force=10)
+        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-1.0, force=50)
         self.activated = False
 
     def detect_contact(self):
@@ -92,12 +93,9 @@ class Robotiq2F85:
         pts = [pt for pt in pts if pt[2] != self.body_id]
         return len(pts) > 0  # pylint: disable=g-explicit-length-test
 
-    def check_grasp(self):
-        while self.moving():
-            time.sleep(0.001)
-        success = self.grasp_width() > 0.01
-        return success
-    
+    def is_grasp_successful(self):
+        return self.grasp_width() <= 0.063
+
     def grasp_width(self):
         lpad = np.array(pybullet.getLinkState(self.body_id, 4)[0])
         rpad = np.array(pybullet.getLinkState(self.body_id, 9)[0])
@@ -130,7 +128,7 @@ class SimulationEnv:
         self.gripper = None
 
         self.table_position = [0, 0, 0]
-        self.robot_position = [0.0, 0.57, 0.6]
+        self.robot_position = [0.0, 0.64, 0.6]
         self.box_position = [0.5, 0.0, 0.67]
         self.box_drop_position = [0.5, 0.0, 0.8]
         self.board_position = [0.09, -0.05, 0.6]
@@ -236,8 +234,8 @@ class SimulationEnv:
             enableCollision=False
         )
 
-        for _ in range(30):
-            self.step_sim_and_update_obs()
+        # for _ in range(30):
+        #     self.step_sim_and_update_obs()
 
     def move_joints_to_pos(self, joint_positions):
         pybullet.setJointMotorControlArray(
@@ -298,17 +296,22 @@ class SimulationEnv:
 
         self.move_and_step(hover_start_xyz)
         self.move_and_step(start_xyz)
-        # time.sleep(0.2)
         self.gripper.activate()
-        for _ in range(240):
-            self.step_sim_and_update_obs()
+        prev_grasp_width = self.gripper.grasp_width()
+        time.sleep(0.01)
+        while prev_grasp_width > self.gripper.grasp_width():
+            prev_grasp_width = self.gripper.grasp_width()
+            time.sleep(0.01)
         self.move_and_step(hover_start_xyz)
         self.move_and_step(hover_end_xyz)
         self.move_and_step(end_xyz)
-        # time.sleep(0.2)
         self.gripper.release()
-        for _ in range(240):
-            self.step_sim_and_update_obs()
+        prev_grasp_width = self.gripper.grasp_width()
+        time.sleep(0.01)
+        while prev_grasp_width < self.gripper.grasp_width():
+            prev_grasp_width = self.gripper.grasp_width()
+            time.sleep(0.01)
+
         self.move_and_step(hover_end_xyz)
         self.move_and_step(self.default_position)
 
@@ -462,33 +465,37 @@ class SimulationEnv:
         fen += f" {fen_turn} - - 0 1" # TODO: implement halfmoves and fullmoves
         return fen
 
-    def make_move(self, is_our_turn=True):
+    def make_move(self, is_red_turn=True, move=None, print_evals=False) -> bool:
         self.update_observations()
         if self.board is None or self.board.shape != (10, 9):
             print("Camera image cannot be processed.")
             return
 
-        # if self.i == 0:
-        #     self.print_board()
-        # self.i = (self.i+1) % 30
+        if move is None:
+            # if self.i == 0:
+            #     self.print_board()
+            # self.i = (self.i+1) % 30
 
-        fen = self.board_to_fen(self.board, is_our_turn)
-        # print(fen)
-        bestmove = asyncio.run(self.engine.get_best_move(fen))
-        print("bestmove:", bestmove, flush=True)
-        if bestmove == '(none)':
-            # Game over
-            print("Game over!")
-            return
+            fen = self.board_to_fen(self.board, is_red_turn)
+            # print(fen)
+            move = asyncio.run(self.engine.get_best_move(fen, print_evals=print_evals))
+            print("Pikafish thinks the best move is", move, flush=True)
+            if move == '(none)':
+                # Game over
+                print("Game over!")
 
         # get xyz coordinates of targets
-        start_pos = bestmove[:2]
-        end_pos = bestmove[2:]
+        start_pos = move[:2]
+        end_pos = move[2:]
+
+        if self.get_piece_at_position(start_pos) is None:
+            # Invalid move
+            return False
 
         # print(f"row: {row}, col: {col}")
         # return self.board_positions[row][col]
 
-        piece_grip_depth = 0.0452
+        piece_grip_depth = 0.048 # 0.0452
         piece_drop_depth = 0.037
         # check if there is a piece at the location
         if self.get_piece_at_position(end_pos) is not None:
@@ -509,7 +516,7 @@ class SimulationEnv:
         start_coords[2] -= piece_grip_depth
         end_coords[2] -= piece_drop_depth
         self.move_object(start_coords, end_coords)
-        return "Move: " + bestmove
+        return True
 
     def pos_to_idx(self, pos):
         col = ord(pos[0]) - ord('a')

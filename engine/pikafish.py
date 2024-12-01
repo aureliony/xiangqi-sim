@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 
 class Pikafish:
@@ -11,7 +12,6 @@ class Pikafish:
         # print(f">> {command}")
         self.process.stdin.write((command + "\n").encode())
         await self.process.stdin.drain()  # Ensure the command is flushed to the engine
-
 
     async def read_output(self, timeout=2.0):
         """Read all lines of output from the chess engine."""
@@ -28,14 +28,18 @@ class Pikafish:
                     output.append(line)
 
             except asyncio.TimeoutError:
-                # If no line is received within the timeout, assume output has ended
-                # print("No more data received, assuming end of output.")
+                # If no line is received within the timeout, stop the engine and get the current best move
+                # TODO: Fix this
+                # await self.send_command("stop")
+                # task = asyncio.create_task(self.process.stdout.readline())
+                # time.sleep(0.5)
+                # print(task.result())
+                # assert 0
                 break
 
         return output
 
-
-    async def get_best_move(self, fen: str = None, depth: int = 15) -> str:
+    async def get_best_move(self, fen: str = None, depth: int = 10, print_evals=True) -> str:
         """
         go depth 1 -> "bestmove m"
         position startpos moves m1 m2...
@@ -51,11 +55,12 @@ class Pikafish:
         command = f"position fen {fen}" if fen is not None else "position startpos"
         await self.send_command(command)
 
-        command = "eval"
-        await self.send_command(command)
-        output = await self.read_output()
-        for line in output[3:-23]:
-            print(line, flush=True)
+        if print_evals:
+            command = "eval"
+            await self.send_command(command)
+            output = await self.read_output()
+            for line in output[3:-23]:
+                print(line, flush=True)
 
         command = f"go depth {depth}"
         await self.send_command(command)
