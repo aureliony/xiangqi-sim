@@ -125,12 +125,16 @@ class SimulationEnv:
 
         self.home_joints = (np.pi / 2, -np.pi / 2, np.pi / 2, -np.pi / 2, 3 * np.pi / 2, 0)  # Joint angles: (J0, J1, J2, J3, J4, J5).
         self.home_ee_euler = (np.pi, 0, np.pi)  # (RX, RY, RZ) rotation in Euler angles.
-        self.ee_link_id = 9  # Link ID of UR5 end effector.
-        self.tip_link_id = 10  # Link ID of gripper finger tips.
+        self.ee_link_id = 9  # Link ID of UR5 end effector
+        self.tip_link_id = 10  # Link ID of gripper finger tips
         self.gripper = None
 
-        self.position = [0, 0.62, 0.62]
-        
+        self.table_position = [0, 0, 0]
+        self.robot_position = [0.0, 0.57, 0.6]
+        self.box_position = [0.0, -0.52, 0.67]
+        self.box_drop_position = [0.0, -0.45, 0.8]
+        self.board_position = [0.09, -0.05, 0.6]
+
         image_aspect_ratio = 1.0
         self.image_height = 320
         self.image_width = int(image_aspect_ratio * self.image_height)
@@ -138,88 +142,86 @@ class SimulationEnv:
         self.piece_id_to_char = None
         self.piece_id_to_fen = None
         self.board = None
-        self.i = 0
-        
+
         self.engine = Pikafish()
 
         # Default position of robot arm's end effector. to get out of the camera's view
-        self.default_position = [0, 0.0, 1.0]
+        self.default_position = [0, 0.0, 0.8]
         self.board_positions = [[0.0, 0.0, 0.0] * 9 for _ in range(10)]
 
     def reset(self):
-        self.cache_video = []
-
         urdf_dir = "resource/urdf"
 
         ################ Plane
-
         plane_id = pybullet.loadURDF(os.path.join(urdf_dir,"/plane.urdf"), [0, 0, 0])
         plane_texture_id = pybullet.loadTexture("resource/texture/texture1.jpg")
         pybullet.changeVisualShape(0, -1, textureUniqueId=plane_texture_id)
-                
-        ################ Table
 
-        table_position = [0, 0, 0]
+        ################ Table
         table_scaling = 1.0
         table_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi/2])
-        table_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"table.urdf"),\
-                                        useFixedBase=True,
-                                        basePosition=table_position,\
-                                        baseOrientation=table_orientation,\
-                                        globalScaling=table_scaling)
+        table_id = pybullet.loadURDF(
+            fileName=os.path.join(urdf_dir,"table.urdf"),
+            useFixedBase=True,
+            basePosition=self.table_position,
+            baseOrientation=table_orientation,
+            globalScaling=table_scaling
+        )
         # table_texture_id = pybullet.loadTexture(os.path.join(root_dir,"resource/texture/table.png"))
         table_texture_id = pybullet.loadTexture("resource/texture/table.png")
         pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
-        
-        ################ Box
 
-        box_position = [0.25, 0.62, 0.67]
+        ################ Box
         box_scaling = 0.08
         box_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi/2])
-        box_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/box/box.urdf"),\
-                                        useFixedBase=True,
-                                        basePosition=box_position,\
-                                        baseOrientation=box_orientation,\
-                                        globalScaling=box_scaling)
+        box_id = pybullet.loadURDF(
+            fileName=os.path.join(urdf_dir,"obj_libs/box/box.urdf"),
+            useFixedBase=True,
+            basePosition=self.box_position,
+            baseOrientation=box_orientation,
+            globalScaling=box_scaling
+        )
         # change colour to light brown
         pybullet.changeVisualShape(box_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
+        pybullet.changeDynamics(box_id, -1, mass=0.2)
 
         ################ Board
-        
-        board_position = [0.08, -0.05, 0.6]
         board_scaling = 0.5
         board_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi])
-        board_id = pybullet.loadURDF(fileName=os.path.join(urdf_dir,"obj_libs/chessboard/chessboard.urdf"),\
-                                        useFixedBase=True,
-                                        basePosition=board_position,\
-                                        baseOrientation=board_orientation,\
-                                        globalScaling=board_scaling)
+        board_id = pybullet.loadURDF(
+            fileName=os.path.join(urdf_dir,"obj_libs/chessboard/chessboard.urdf"),
+            useFixedBase=True,
+            basePosition=self.board_position,
+            baseOrientation=board_orientation,
+            globalScaling=board_scaling
+        )
         self.board_id = board_id
         pybullet.changeVisualShape(board_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
+        pybullet.changeDynamics(board_id, -1, mass=1.0)
 
         ################ Robot
-        
-        self.robot_id = pybullet.loadURDF("resource/urdf/ur5e/ur5e.urdf", self.position, globalScaling=1.2, flags=pybullet.URDF_USE_MATERIAL_COLORS_FROM_MTL)
-        self.ghost_id = pybullet.loadURDF("resource/urdf/ur5e/ur5e.urdf", [self.position[0], self.position[1], self.position[2] - 10], globalScaling=1.2)  # For forward kinematics.
+        self.robot_id = pybullet.loadURDF(
+            "resource/urdf/ur5e/ur5e.urdf",
+            self.robot_position,
+            globalScaling=1.2,
+            flags=pybullet.URDF_USE_MATERIAL_COLORS_FROM_MTL
+        )
         self.joint_ids = [pybullet.getJointInfo(self.robot_id, i) for i in range(pybullet.getNumJoints(self.robot_id))]
         self.joint_ids = [j[0] for j in self.joint_ids if j[2] == pybullet.JOINT_REVOLUTE]
 
-        # Move robot to home configuration.
+        # Move robot to home configuration
         for i in range(len(self.joint_ids)):
             pybullet.resetJointState(self.robot_id, self.joint_ids[i], self.home_joints[i])
 
-        # Add gripper.
+        # Add gripper
         if self.gripper is not None:
             while self.gripper.constraints_thread.is_alive():
                 self.constraints_thread_active = False
-        self.gripper = Robotiq2F85(self.robot_id, self.ee_link_id, self.position)
+        self.gripper = Robotiq2F85(self.robot_id, self.ee_link_id, self.robot_position)
         self.gripper.release()
 
-        # # record object positions at reset
-        # self.init_pos = {name: self.get_obj_pos(name) for name in object_list}
-
         ################ Chess Pieces
-        self.piece_id_to_char, self.piece_id_to_fen = self.initialize_chess_pieces(board_position)
+        self.piece_id_to_char, self.piece_id_to_fen = self.initialize_chess_pieces(self.board_position)
 
         # Go back to default position
         self.move_and_step(self.default_position)
@@ -234,44 +236,53 @@ class SimulationEnv:
         )
 
         for _ in range(30):
-            self.step_sim_and_render()
+            self.step_sim_and_update_obs()
 
-    def servoj(self, joints):
-        """Move to target joint positions with position control."""
+    def move_joints_to_pos(self, joint_positions):
         pybullet.setJointMotorControlArray(
-        bodyIndex=self.robot_id,
-        jointIndices=self.joint_ids,
-        controlMode=pybullet.POSITION_CONTROL,
-        targetPositions=joints,
-        positionGains=[0.01]*6)
+            bodyIndex=self.robot_id,
+            jointIndices=self.joint_ids,
+            controlMode=pybullet.POSITION_CONTROL,
+            targetPositions=joint_positions,
+            positionGains=[0.01]*6
+        )
 
     def movep(self, position, multiplier=64.0):
-        position = np.array(position)
-        current_position = self.get_ee_pos()
-        dist = np.sqrt(np.sum((current_position - position) ** 2.0))
-        steps = max(1, round(dist * multiplier))  # Increase steps for smoother and slower movement
-        # print(f"Dist: {dist:.3f}, Steps: {steps}")
-        for i in range(1, steps + 1):
-            interpolated_position = current_position + (position - current_position) * (i / steps)
-            joints = pybullet.calculateInverseKinematics(
-                bodyUniqueId=self.robot_id,
-                endEffectorLinkIndex=self.tip_link_id,
-                targetPosition=interpolated_position,
-                targetOrientation=pybullet.getQuaternionFromEuler(self.home_ee_euler),
-                maxNumIterations=100
-            )
-            self.servoj(joints)
-            self.step_sim_and_render()
+        joints = pybullet.calculateInverseKinematics(
+            bodyUniqueId=self.robot_id,
+            endEffectorLinkIndex=self.tip_link_id,
+            targetPosition=position,
+            targetOrientation=pybullet.getQuaternionFromEuler(self.home_ee_euler),
+            maxNumIterations=100
+        )
+        self.move_joints_to_pos(joints)
+        self.step_sim_and_update_obs()
+        # position = np.array(position)
+        # current_position = self.get_ee_pos()
+        # dist = np.sqrt(np.sum((current_position - position) ** 2.0))
+        # steps = max(1, round(dist * multiplier))  # Increase steps for smoother and slower movement
+        # # print(f"Dist: {dist:.3f}, Steps: {steps}")
+        # for i in range(1, steps + 1):
+        #     interpolated_position = current_position + (position - current_position) * (i / steps)
+        #     joints = pybullet.calculateInverseKinematics(
+        #         bodyUniqueId=self.robot_id,
+        #         endEffectorLinkIndex=self.tip_link_id,
+        #         targetPosition=interpolated_position,
+        #         targetOrientation=pybullet.getQuaternionFromEuler(self.home_ee_euler),
+        #         maxNumIterations=100
+        #     )
+        #     self.servoj(joints)
+        #     self.step_sim_and_render()
 
-    def get_ee_pos(self):
+    def get_end_effector_pos(self):
         return np.array(pybullet.getLinkState(self.robot_id, self.tip_link_id)[0])
 
     def move_and_step(self, goal, target_delta = 0.01):
-        ee_xyz = self.get_ee_pos()
+        ee_xyz = self.get_end_effector_pos()
         while np.linalg.norm(goal - ee_xyz) > target_delta:
             self.movep(goal)
-            self.step_sim_and_render()
-            ee_xyz = self.get_ee_pos()
+            self.step_sim_and_update_obs()
+            ee_xyz = self.get_end_effector_pos()
 
     def move_object(self, start_xyz, end_xyz):
         start_xyz = np.array(start_xyz)
@@ -286,29 +297,26 @@ class SimulationEnv:
 
         self.move_and_step(hover_start_xyz)
         self.move_and_step(start_xyz)
-        time.sleep(0.2)
+        # time.sleep(0.2)
         self.gripper.activate()
         for _ in range(240):
-            self.step_sim_and_render()
+            self.step_sim_and_update_obs()
         self.move_and_step(hover_start_xyz)
         self.move_and_step(hover_end_xyz)
         self.move_and_step(end_xyz)
-        time.sleep(0.2)
+        # time.sleep(0.2)
         self.gripper.release()
         for _ in range(240):
-            self.step_sim_and_render()
+            self.step_sim_and_update_obs()
         self.move_and_step(hover_end_xyz)
         self.move_and_step(self.default_position)
 
-    def step_sim_and_render(self):
+    def step_sim_and_update_obs(self):
         pybullet.stepSimulation()
         self.update_counter = getattr(self, 'update_counter', 0) + 1
         if self.update_counter % 16 == 0:
             self.update_observations(fast=True)
             self.update_counter = 0
-
-    # def get_reward(self):
-    #     return None
 
     def update_observations(self, fast=False) -> None:
         # For simplicity, let's fix the camera position to directly above the board
@@ -328,7 +336,7 @@ class SimulationEnv:
         )
 
         # pybullet.resetDebugVisualizerCamera(camera_distance, camera_yaw, camera_pitch, camera_target_position)
-        camera_proj_matrix = pybullet.computeProjectionMatrixFOV(fov=110.0, aspect=1.0, nearVal=0.1, farVal=10)
+        camera_proj_matrix = pybullet.computeProjectionMatrixFOV(fov=125.0, aspect=1.0, nearVal=0.1, farVal=10)
         # $initAxis(camera_link_pos, camera_link_ori)
         cameraImage = pybullet.getCameraImage(
             width=self.image_width,
@@ -479,19 +487,17 @@ class SimulationEnv:
         # print(f"row: {row}, col: {col}")
         # return self.board_positions[row][col]
 
+        piece_grip_depth = 0.0452
+        piece_drop_depth = 0.037
         # check if there is a piece at the location
         if self.get_piece_at_position(end_pos) is not None:
             # print(self.get_piece_at_position(end_pos))
-            # put the piece out of the board
-            start_pos = end_pos
-            r0, c0 = self.pos_to_idx(start_pos)
+            # move the piece into the box
+            r0, c0 = self.pos_to_idx(end_pos)
             start_id = self.board[9-r0, c0]
             start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
-            end_coords = [0.25, 0.62, 0.8]
-            start_coords[2] -= 0.0452
-            self.move_object(start_coords, end_coords)
-            start_pos = bestmove[:2]
-            end_pos = bestmove[2:]
+            start_coords[2] -= piece_grip_depth
+            self.move_object(start_coords, self.box_drop_position)
 
         r0, c0 = self.pos_to_idx(start_pos)
         start_id = self.board[9-r0, c0]
@@ -499,8 +505,8 @@ class SimulationEnv:
         start_coords = list(pybullet.getBasePositionAndOrientation(start_id)[0])
         end_coords = self.pos_to_coordinates(end_pos)
 
-        start_coords[2] -= 0.0452
-        end_coords[2] -= 0.037
+        start_coords[2] -= piece_grip_depth
+        end_coords[2] -= piece_drop_depth
         self.move_object(start_coords, end_coords)
         return "Move: " + bestmove
 
@@ -554,7 +560,7 @@ class SimulationEnv:
 
         PIECE_MASS = 0.01
         cp_scaling = 0.20 # chess piece scaling
-        obj_friction_ceof = 1.0
+        obj_friction_ceof = 100.0
         b_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi / 2]) # black pieces orientation
         r_orientation = pybullet.getQuaternionFromEuler([0, 0, -np.pi / 2]) # red pieces orientation
 
