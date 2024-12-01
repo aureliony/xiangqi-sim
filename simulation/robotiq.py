@@ -208,7 +208,7 @@ class SimulationEnv:
         )
         # change colour to light brown
         pybullet.changeVisualShape(box_id, -1, rgbaColor=[0.824, 0.706, 0.549, 1.0])
-        pybullet.changeDynamics(box_id, -1, mass=0.2)
+        pybullet.changeDynamics(box_id, -1, mass=1.0)
 
         ################ Board
         board_scaling = 0.5
