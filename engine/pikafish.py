@@ -39,7 +39,7 @@ class Pikafish:
 
         return output
 
-    async def get_best_move(self, fen: str = None, depth: int = 10, print_evals=True) -> str:
+    async def get_best_move(self, fen: str = None, depth: int = 10, print_evals=False) -> str:
         """
         go depth 1 -> "bestmove m"
         position startpos moves m1 m2...
@@ -55,10 +55,10 @@ class Pikafish:
         command = f"position fen {fen}" if fen is not None else "position startpos"
         await self.send_command(command)
 
+        command = "eval"
+        await self.send_command(command)
+        output = await self.read_output()
         if print_evals:
-            command = "eval"
-            await self.send_command(command)
-            output = await self.read_output()
             for line in output[3:-23]:
                 print(line, flush=True)
 

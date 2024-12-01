@@ -68,7 +68,7 @@ class Robotiq2F85:
 
     def release(self):
         """Open gripper fingers"""
-        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-1.0, force=50)
+        pybullet.setJointMotorControl2(self.body_id, self.motor_joint, pybullet.VELOCITY_CONTROL, targetVelocity=-0.8, force=50)
         self.activated = False
 
     def detect_contact(self):
