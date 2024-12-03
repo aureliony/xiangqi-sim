@@ -38,7 +38,11 @@ To play as red against Pikafish, run `python -m simulation.chess --humans 1`
 
 To play against yourself or a friend, run `python -m simulation.chess --humans 2`
 
-You may also specify the difficulty level of Pikafish, from level 1 to 20, by specifying the `--level` flag. For instance: `python -m simulation.chess --humans 0 --level 10`.
+### Other parameters
+
+`--level <int>`: Indicates the Pikafish difficulty/depth level, from 1 to 20.
+
+`--mp_algo <str>`: Indicates the motion planning algorithm to use for arm/gripper movement. Supported values are `pnp` and `rrt`.
 
 ## Troubleshooting
 

@@ -36,7 +36,7 @@ def get_user_move_input(is_red_turn: bool):
         print("Invalid input. It must be a 4-character string with valid board coordinates.")
 
 
-async def main_loop(num_humans, depth):
+async def main_loop(num_humans, depth, mp_algo):
     process = await asyncio.create_subprocess_exec(
         "engine/pikafish.exe",
         stdin=asyncio.subprocess.PIPE,
@@ -45,8 +45,7 @@ async def main_loop(num_humans, depth):
     )
 
     engine = Pikafish(process)
-    env = SimulationEnv(engine)
-    # env = SimulationEnvRRT(engine)
+    env = SimulationEnvRRT(engine) if mp_algo == 'rrt' else SimulationEnv(engine)
     env.reset()
 
     is_red_turn = True
@@ -92,11 +91,19 @@ if __name__ == '__main__':
         choices=list(range(1, 20+1)),
         help="Difficulty level of Pikafish."
     )
+    parser.add_argument(
+        "--mp_algo",
+        type=str,
+        default='pnp',
+        choices=['pnp', 'rrt'],
+        help="Motion planning algorithm to use for arm/gripper movement. 'pnp' for Pick-and-place, 'rrt' for Rapidly-Exploring Random Trees."
+    )
 
     # Parse the arguments
     args = parser.parse_args()
     num_humans = args.humans
     depth = args.level
+    mp_algo = args.mp_algo
 
     pybullet.connect(pybullet.GUI)
     pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, 1)
@@ -109,4 +116,4 @@ if __name__ == '__main__':
         cameraTargetPosition=[0.08, -0.05, 0.6]
     )
 
-    asyncio.run(main_loop(num_humans, depth))
+    asyncio.run(main_loop(num_humans, depth, mp_algo))
