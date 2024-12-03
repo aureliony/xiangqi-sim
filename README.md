@@ -32,13 +32,11 @@ The robot uses the **Pikafish** open-source Xiangqi engine to determine optimal 
 
 ## Run the simulation
 
-Run the simulation (Pikafish vs. Pikafish) with the command `python -m simulation.chess`
+Run the simulation (Pikafish vs. Pikafish) with the command `python -m simulation.chess`.
 
-To play as red against Pikafish, run `python -m simulation.chess --humans 1`
+### Additional parameters
 
-To play against yourself or a friend, run `python -m simulation.chess --humans 2`
-
-### Other parameters
+`--humans <int>`: No. of humans in the game. Specify 0 for self-playing, 1 to play as red against Pikafish, and 2 to play against yourself or a friend.
 
 `--level <int>`: Indicates the Pikafish difficulty/depth level, from 1 to 20.
 
