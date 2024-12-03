@@ -63,7 +63,7 @@ class SimulationEnvRRT(SimulationEnv):
             node: np.ndarray,
             prev_bounds = np.array([[0.0, 0.0, 0.8], [0.0, 0.0, 0.8]]),
             radius = 0.1,
-            workspace_bounds = np.array([[-0.4, -0.4, 0.6], [0.4, 0.65, 1.1]])
+            workspace_bounds = np.array([[-0.4, -0.4, 0.6], [0.55, 0.5, 1.1]])
         ):
             bounds = np.array([
                 node - np.array([radius, radius, radius]),
