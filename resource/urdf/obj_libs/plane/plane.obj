@@ -1,6 +1,6 @@
 # Blender v2.66 (sub 1) OBJ File: ''
 # www.blender.org
-mtllib /scr-ssd/EnvironmentLeverage/simulation/urdf/plane.mtl
+mtllib plane.mtl
 o Plane
 v 15.000000 -15.000000 0.000000
 v 15.000000 15.000000 0.000000

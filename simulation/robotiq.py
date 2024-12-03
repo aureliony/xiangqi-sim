@@ -156,7 +156,7 @@ class SimulationEnv:
     def reset(self):
         ################ Plane
         plane_id = pybullet.loadURDF(
-            os.path.join(URDF_DIR, "plane.urdf"),
+            os.path.join(URDF_DIR, "obj_libs/plane/plane.urdf"),
             basePosition=[0, 0, 0]
         )
         plane_texture_id = pybullet.loadTexture(os.path.join(TEXTURE_DIR, "plane.jpg"))
@@ -166,14 +166,14 @@ class SimulationEnv:
         table_scaling = 1.0
         table_orientation = pybullet.getQuaternionFromEuler([0, 0, np.pi/2])
         table_id = pybullet.loadURDF(
-            fileName=os.path.join(URDF_DIR, "table.urdf"),
+            fileName=os.path.join(URDF_DIR, "obj_libs/table/table.urdf"),
             useFixedBase=True,
             basePosition=self.table_position,
             baseOrientation=table_orientation,
             globalScaling=table_scaling
         )
         table_texture_id = pybullet.loadTexture(os.path.join(TEXTURE_DIR, "table.png"))
-        pybullet.changeVisualShape(table_id,0,textureUniqueId=table_texture_id)
+        pybullet.changeVisualShape(table_id, 0, textureUniqueId=table_texture_id)
 
         ################ Robot
         self.robot_id = pybullet.loadURDF(
