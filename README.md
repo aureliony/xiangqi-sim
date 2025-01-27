@@ -1,12 +1,12 @@
 # Autonomous Xiangqi-Playing Robot
 
-![PyBullet Simulation](imgs/simulation.png)
-
 ## Overview
 
 This project integrates robotics and AI to develop an autonomous system capable of playing **Xiangqi** (Chinese Chess). The robot system is based on a **6-DOF UR5e robotic arm** with a **Robotiq 2F-85 gripper** for precise manipulation of Xiangqi pieces.
 
 The robot uses the **Pikafish** open-source Xiangqi engine to determine optimal moves. Our focus is on real-world applications in robotic game-playing, human-robot interaction and motion planning.
+
+![PyBullet Simulation](imgs/simulation.png)
 
 ## Project Structure
 
@@ -28,7 +28,7 @@ The robot uses the **Pikafish** open-source Xiangqi engine to determine optimal 
 
 1. Install conda dependencies: `conda install conda-forge::pybullet`
 
-1. Clone this repository: `git clone https://github.com/aureliony/CS4278-Project.git`
+1. Clone this repository: `git clone https://github.com/aureliony/xiangqi-sim.git`
 
 ## Run the simulation
 
